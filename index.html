@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anjul Upadhyay — Cloud & DevOps Engineer | CloudX</title>
+  <meta name="description" content="Anjul Upadhyay — Cloud & DevOps Engineer in Bangalore. GCP, AWS, OCI, CI/CD, Infrastructure as Code. Welcome to CloudX." />
+  <meta property="og:title" content="Anjul Upadhyay — CloudX" />
+  <meta property="og:description" content="Cloud & DevOps Engineer · GCP | AWS | OCI" />
+  <meta property="og:url" content="https://cloudx.co.in" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="sky"></canvas>
+  <div class="aurora" aria-hidden="true"></div>
+
+  <!-- ============ NAV ============ -->
+  <nav class="nav">
+    <a href="#top" class="logo">cloud<span>X</span><em>_</em></a>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#skills">Skills</a>
+      <a href="#work">Work</a>
+      <a href="#projects">Projects</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a class="nav-cta" href="mailto:akanjulupadhyay@gmail.com">Hire Me</a>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <header class="hero" id="top">
+    <div class="hero-text">
+      <p class="kicker">// Bangalore, India · Open to opportunities</p>
+      <h1>Anjul <span class="grad">Upadhyay</span></h1>
+      <h2 class="typing-line">&gt; <span id="typed"></span><span class="caret">▊</span></h2>
+      <p class="lede">
+        I design, automate and run cloud infrastructure that doesn't wake people up at 3 AM.
+        Multi-cloud by choice — <strong>GCP</strong>, <strong>AWS</strong> and <strong>OCI</strong> —
+        with pipelines, IaC and observability baked in from day one.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#projects">View My Work</a>
+        <a class="btn btn-ghost" href="mailto:akanjulupadhyay@gmail.com">akanjulupadhyay@gmail.com</a>
+      </div>
+      <div class="badges">
+        <span class="badge">☁️ GCP</span>
+        <span class="badge">🟧 AWS</span>
+        <span class="badge">🔴 OCI</span>
+        <span class="badge">⚙️ DevOps</span>
+        <span class="badge">🐳 Docker</span>
+        <span class="badge">🤖 CI/CD</span>
+      </div>
+    </div>
+
+    <div class="terminal" id="terminal">
+      <div class="term-bar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="term-title">anjul@cloudx: ~/infra</span>
+      </div>
+      <pre class="term-body" id="term-body"></pre>
+    </div>
+  </header>
+
+  <!-- ============ STATS ============ -->
+  <section class="stats reveal">
+    <div class="stat"><span class="num" data-count="3">0</span><span class="lbl">Cloud Platforms</span></div>
+    <div class="stat"><span class="num" data-count="24">0</span><span class="lbl">×7 Mindset</span></div>
+    <div class="stat"><span class="num" data-count="100">0</span><span class="lbl">% Automation Goal</span></div>
+    <div class="stat"><span class="num" data-count="0">0</span><span class="lbl">3 AM Pages Tolerated</span></div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="about" class="section reveal">
+    <h3 class="sec-title"><span>01.</span> About Me</h3>
+    <div class="about-grid">
+      <div>
+        <p>
+          Hi! I'm Anjul — a Cloud &amp; DevOps engineer based in <strong>Bangalore</strong>.
+          I live where infrastructure meets automation: provisioning environments as code,
+          wiring up CI/CD so deploys are boring, and keeping systems observable so problems
+          surface before users notice.
+        </p>
+        <p>
+          I work across <strong>Google Cloud, AWS and Oracle Cloud</strong>, which means I care more
+          about the patterns — networking, identity, immutable infra, pipelines — than any one
+          vendor's console. <em>cloudx.co.in</em> is my corner of the internet for projects,
+          experiments and notes from the trenches.
+        </p>
+        <p class="mono-note">$ whoami → engineer · automator · lifelong learner</p>
+      </div>
+      <div class="about-card">
+        <h4>Currently</h4>
+        <ul>
+          <li>🔭 Deepening multi-cloud architecture skills</li>
+          <li>🛠️ Building CI/CD pipelines with Jenkins &amp; GitHub Actions</li>
+          <li>📦 Containerising everything that sits still long enough</li>
+          <li>📚 Learning in public — repos below update live</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SKILLS ============ -->
+  <section id="skills" class="section reveal">
+    <h3 class="sec-title"><span>02.</span> Toolbox</h3>
+    <div class="skills-grid">
+      <div class="skill-card">
+        <div class="skill-icon">☁️</div>
+        <h4>Cloud Platforms</h4>
+        <div class="chips">
+          <span>Google Cloud</span><span>AWS</span><span>Oracle Cloud</span>
+          <span>Compute</span><span>VPC / Networking</span><span>IAM</span><span>Cloud Storage</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🔁</div>
+        <h4>DevOps & CI/CD</h4>
+        <div class="chips">
+          <span>Jenkins</span><span>GitHub Actions</span><span>Git</span>
+          <span>Docker</span><span>Linux</span><span>Shell Scripting</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">🏗️</div>
+        <h4>Infra & Practices</h4>
+        <div class="chips">
+          <span>Infrastructure as Code</span><span>Terraform</span><span>Monitoring</span>
+          <span>Cost Optimization</span><span>High Availability</span>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-icon">💻</div>
+        <h4>Languages</h4>
+        <div class="chips">
+          <span>Python</span><span>Java</span><span>Bash</span><span>YAML (fluently 😄)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHAT I DO ============ -->
+  <section id="work" class="section reveal">
+    <h3 class="sec-title"><span>03.</span> What I Do</h3>
+    <div class="work-grid">
+      <article class="work-card">
+        <span class="work-num">/01</span>
+        <h4>Cloud Architecture</h4>
+        <p>Designing secure, cost-aware landing zones and network topologies across GCP, AWS and OCI — built to scale, priced to survive the bill.</p>
+      </article>
+      <article class="work-card">
+        <span class="work-num">/02</span>
+        <h4>CI/CD Pipelines</h4>
+        <p>From commit to production without crossed fingers. Jenkins and GitHub Actions pipelines with testing, gating and rollback paths.</p>
+      </article>
+      <article class="work-card">
+        <span class="work-num">/03</span>
+        <h4>Infrastructure as Code</h4>
+        <p>If it's clicked in a console, it didn't happen. Reproducible environments with Terraform and version-controlled everything.</p>
+      </article>
+      <article class="work-card">
+        <span class="work-num">/04</span>
+        <h4>Reliability & Ops</h4>
+        <p>Monitoring, alerting and runbooks that make incidents short and post-mortems blameless. Boring on purpose.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ PROJECTS (live from GitHub) ============ -->
+  <section id="projects" class="section reveal">
+    <h3 class="sec-title"><span>04.</span> Projects <small class="live-tag">● live from GitHub</small></h3>
+    <div class="repo-grid" id="repo-grid">
+      <p class="loading-msg">Fetching repositories from GitHub…</p>
+    </div>
+    <p class="more-link"><a href="https://github.com/AnjulUpadhyay" target="_blank" rel="noopener">See everything on GitHub →</a></p>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section id="contact" class="section reveal contact">
+    <h3 class="sec-title"><span>05.</span> Get In Touch</h3>
+    <p class="contact-lede">
+      Have a project, a role, or just want to talk cloud? My inbox is always open —
+      I'll get back to you fast.
+    </p>
+    <a class="btn btn-primary btn-big" href="mailto:akanjulupadhyay@gmail.com?subject=Hello%20from%20cloudx.co.in">Say Hello 👋</a>
+    <div class="socials">
+      <a href="https://github.com/AnjulUpadhyay" target="_blank" rel="noopener">GitHub</a>
+      <span>·</span>
+      <a href="mailto:akanjulupadhyay@gmail.com">Email</a>
+      <span>·</span>
+      <a href="https://www.linkedin.com/in/anjul-upadhyay" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Designed &amp; built by <strong>Anjul Upadhyay</strong> · Hosted on <span class="grad">cloudx.co.in</span></p>
+    <p class="mono-note">© <span id="year"></span> · deployed via git push, as nature intended</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
