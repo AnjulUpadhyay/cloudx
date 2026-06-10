@@ -3,9 +3,11 @@
 /* ---- 1. Typing effect ---- */
 const phrases = [
   "Senior DevOps Engineer",
+  "I build AI agentic systems",
   "OCI | GCP | AWS | OpenStack",
-  "Kubernetes · Terraform · Ansible",
+  "Kubernetes · Terraform · LangGraph",
   "deploys: 3-4 days → 2 hours",
+  "12+ agents · 100% local LLMs",
   "terraform apply ✓",
 ];
 const typedEl = document.getElementById("typed");
@@ -36,9 +38,9 @@ const termLines = [
   ['c-blue',   '  ✓ openstack  [active]'],
   ['c-green',  '$ kubectl version --short'],
   ['',         '  Server Version: v1.36 · upgraded with zero data loss'],
-  ['c-green',  '$ kubectl get experience -o wide'],
-  ['c-purple', '  NAME        STATUS    RESTARTS   AGE'],
-  ['',         '  automation  Running   0          7y+'],
+  ['c-green',  '$ brahmaand status'],
+  ['c-purple', '  AGENT      STATUS    MODEL       COST'],
+  ['',         '  12 agents  Running   local-llm   $0.00/mo'],
   ['c-green',  '$ uptime'],
   ['',         '  99.9% · deploys in 2h, down from 3-4 days ☕'],
   ['c-green',  '$ echo "let\'s build something." '],
@@ -84,7 +86,7 @@ function drawSky() {
     if (p.y < 0 || p.y > H) p.vy *= -1;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(56,189,248,0.55)";
+    ctx.fillStyle = "rgba(251,191,36,0.5)";
     ctx.fill();
   }
   for (let i = 0; i < particles.length; i++) {
@@ -92,7 +94,7 @@ function drawSky() {
       const a = particles[i], b = particles[j];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
       if (d < 130) {
-        ctx.strokeStyle = `rgba(129,140,248,${(1 - d / 130) * 0.18})`;
+        ctx.strokeStyle = `rgba(251,113,133,${(1 - d / 130) * 0.16})`;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
@@ -100,7 +102,7 @@ function drawSky() {
     const m = particles[i];
     const dm = Math.hypot(m.x - mouse.x, m.y - mouse.y);
     if (dm < 170) {
-      ctx.strokeStyle = `rgba(52,211,153,${(1 - dm / 170) * 0.35})`;
+      ctx.strokeStyle = `rgba(251,146,60,${(1 - dm / 170) * 0.35})`;
       ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
     }
   }
@@ -115,7 +117,7 @@ drawSky();
 /* ---- 4. Scroll reveal ---- */
 const io = new IntersectionObserver(
   (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
-  { threshold: 0.12 }
+  { threshold: 0, rootMargin: "0px 0px -8% 0px" }
 );
 document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
 
