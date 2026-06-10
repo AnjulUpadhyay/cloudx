@@ -2,10 +2,10 @@
 
 /* ---- 1. Typing effect ---- */
 const phrases = [
-  "Cloud & DevOps Engineer",
-  "GCP | AWS | OCI",
-  "I automate infrastructure_",
-  "CI/CD · IaC · Containers",
+  "Senior DevOps Engineer",
+  "OCI | GCP | AWS | OpenStack",
+  "Kubernetes · Terraform · Ansible",
+  "deploys: 3-4 days → 2 hours",
   "terraform apply ✓",
 ];
 const typedEl = document.getElementById("typed");
@@ -28,18 +28,19 @@ typeLoop();
 const termLines = [
   ['c-dim',    '# cloudx.co.in — infrastructure status'],
   ['c-green',  '$ whoami'],
-  ['',         'anjul-upadhyay · cloud-devops-engineer · bangalore'],
+  ['',         'anjul-upadhyay · senior-devops-engineer · oracle · bengaluru'],
   ['c-green',  '$ cloud --list-providers'],
-  ['c-blue',   '  ✓ gcp     [active]'],
-  ['c-blue',   '  ✓ aws     [active]'],
-  ['c-blue',   '  ✓ oci     [active]'],
-  ['c-green',  '$ terraform plan'],
-  ['',         '  Plan: ∞ to add, 0 to destroy.'],
-  ['c-green',  '$ kubectl get passion -o wide'],
+  ['c-blue',   '  ✓ oci        [active]'],
+  ['c-blue',   '  ✓ gcp        [certified architect]'],
+  ['c-blue',   '  ✓ aws        [active]'],
+  ['c-blue',   '  ✓ openstack  [active]'],
+  ['c-green',  '$ kubectl version --short'],
+  ['',         '  Server Version: v1.36 · upgraded with zero data loss'],
+  ['c-green',  '$ kubectl get experience -o wide'],
   ['c-purple', '  NAME        STATUS    RESTARTS   AGE'],
-  ['',         '  automation  Running   0          ∞'],
+  ['',         '  automation  Running   0          7y+'],
   ['c-green',  '$ uptime'],
-  ['',         '  systems nominal · coffee levels critical ☕'],
+  ['',         '  99.9% · deploys in 2h, down from 3-4 days ☕'],
   ['c-green',  '$ echo "let\'s build something." '],
   ['c-purple', '  let\'s build something.'],
 ];
@@ -124,10 +125,12 @@ const counterIO = new IntersectionObserver((entries) => {
     if (!entry.isIntersecting) return;
     const el = entry.target;
     const target = +el.dataset.count;
+    const suffix = el.dataset.suffix || "";
+    const decimals = el.dataset.count.includes(".") ? 1 : 0;
     const dur = 1400, t0 = performance.now();
     (function tick(t) {
       const k = Math.min((t - t0) / dur, 1);
-      el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3)));
+      el.textContent = (target * (1 - Math.pow(1 - k, 3))).toFixed(decimals) + suffix;
       if (k < 1) requestAnimationFrame(tick);
     })(t0);
     counterIO.unobserve(el);
