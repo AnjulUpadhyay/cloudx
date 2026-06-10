@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("cloudx-theme") || "midnight";</script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -29,7 +30,15 @@
       <a href="#projects">Projects</a>
       <a href="#contact">Contact</a>
     </div>
-    <a class="nav-cta" href="mailto:akanjulupadhyay@gmail.com">Hire Me</a>
+    <div class="nav-right">
+      <div class="theme-picker" id="theme-picker" title="Pick a vibe — it sticks">
+        <button class="theme-dot" data-theme="midnight" aria-label="Midnight theme"></button>
+        <button class="theme-dot" data-theme="nebula" aria-label="Nebula theme"></button>
+        <button class="theme-dot" data-theme="aurora" aria-label="Aurora theme"></button>
+        <button class="theme-dot" data-theme="synthwave" aria-label="Synthwave theme"></button>
+      </div>
+      <a class="nav-cta" href="mailto:akanjulupadhyay@gmail.com">Hire Me</a>
+    </div>
   </nav>
 
   <!-- ============ HERO ============ -->

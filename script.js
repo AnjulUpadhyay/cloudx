@@ -1,5 +1,26 @@
 /* ============ CloudX — dynamic bits ============ */
 
+/* ---- 0. Theme switcher ---- */
+const skyColors = { a1: "56,189,248", a2: "129,140,248", a3: "52,211,153" };
+function syncSkyColors() {
+  const cs = getComputedStyle(document.documentElement);
+  skyColors.a1 = cs.getPropertyValue("--a1rgb").trim() || skyColors.a1;
+  skyColors.a2 = cs.getPropertyValue("--a2rgb").trim() || skyColors.a2;
+  skyColors.a3 = cs.getPropertyValue("--a3rgb").trim() || skyColors.a3;
+}
+function applyTheme(name) {
+  document.documentElement.dataset.theme = name;
+  localStorage.setItem("cloudx-theme", name);
+  document.querySelectorAll(".theme-dot").forEach((d) =>
+    d.classList.toggle("active", d.dataset.theme === name)
+  );
+  syncSkyColors();
+}
+document.querySelectorAll(".theme-dot").forEach((d) =>
+  d.addEventListener("click", () => applyTheme(d.dataset.theme))
+);
+applyTheme(document.documentElement.dataset.theme || "midnight");
+
 /* ---- 1. Typing effect ---- */
 const phrases = [
   "Senior DevOps Engineer",
@@ -86,7 +107,7 @@ function drawSky() {
     if (p.y < 0 || p.y > H) p.vy *= -1;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(251,191,36,0.5)";
+    ctx.fillStyle = `rgba(${skyColors.a1},0.5)`;
     ctx.fill();
   }
   for (let i = 0; i < particles.length; i++) {
@@ -94,7 +115,7 @@ function drawSky() {
       const a = particles[i], b = particles[j];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
       if (d < 130) {
-        ctx.strokeStyle = `rgba(251,113,133,${(1 - d / 130) * 0.16})`;
+        ctx.strokeStyle = `rgba(${skyColors.a2},${(1 - d / 130) * 0.17})`;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
@@ -102,7 +123,7 @@ function drawSky() {
     const m = particles[i];
     const dm = Math.hypot(m.x - mouse.x, m.y - mouse.y);
     if (dm < 170) {
-      ctx.strokeStyle = `rgba(251,146,60,${(1 - dm / 170) * 0.35})`;
+      ctx.strokeStyle = `rgba(${skyColors.a3},${(1 - dm / 170) * 0.35})`;
       ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
     }
   }
