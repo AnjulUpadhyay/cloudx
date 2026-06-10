@@ -140,46 +140,5 @@ const counterIO = new IntersectionObserver((entries) => {
 }, { threshold: 0.6 });
 document.querySelectorAll(".num").forEach((el) => counterIO.observe(el));
 
-/* ---- 6. Live GitHub repos ---- */
-const LANG_COLORS = {
-  Java: "#b07219", Python: "#3572A5", JavaScript: "#f1e05a", TypeScript: "#3178c6",
-  HTML: "#e34c26", CSS: "#563d7c", Shell: "#89e051", Go: "#00ADD8",
-  Dockerfile: "#384d54", HCL: "#844FBA",
-};
-async function loadRepos() {
-  const grid = document.getElementById("repo-grid");
-  try {
-    const res = await fetch("https://api.github.com/users/AnjulUpadhyay/repos?sort=updated&per_page=12");
-    if (!res.ok) throw new Error(res.status);
-    const repos = (await res.json()).filter((r) => !r.fork);
-    if (!repos.length) throw new Error("empty");
-    grid.innerHTML = "";
-    for (const r of repos) {
-      const a = document.createElement("a");
-      a.className = "repo-card";
-      a.href = r.html_url;
-      a.target = "_blank";
-      a.rel = "noopener";
-      const color = LANG_COLORS[r.language] || "#8b949e";
-      a.innerHTML = `
-        <div class="repo-head">
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="#93a0b8"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z"/></svg>
-          <span class="repo-name">${r.name}</span>
-        </div>
-        <p class="repo-desc">${r.description || "No description yet — but the code speaks for itself."}</p>
-        <div class="repo-meta">
-          ${r.language ? `<span><span class="lang-dot" style="background:${color}"></span>${r.language}</span>` : ""}
-          <span>★ ${r.stargazers_count}</span>
-          <span>⑂ ${r.forks_count}</span>
-        </div>`;
-      grid.appendChild(a);
-    }
-  } catch {
-    grid.innerHTML =
-      '<p class="error-msg">Couldn\'t reach GitHub right now — see <a href="https://github.com/AnjulUpadhyay" style="color:var(--accent)">github.com/AnjulUpadhyay</a> instead.</p>';
-  }
-}
-loadRepos();
-
-/* ---- 7. Footer year ---- */
+/* ---- 6. Footer year ---- */
 document.getElementById("year").textContent = new Date().getFullYear();

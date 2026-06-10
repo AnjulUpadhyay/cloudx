@@ -323,7 +323,7 @@ body {
 }
 
 /* projects */
-.repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
 .repo-card {
   background: var(--card); border: 1px solid var(--card-border);
   border-radius: 16px; padding: 26px;
@@ -335,13 +335,29 @@ body {
   transform: translateY(-6px); border-color: rgba(251, 146, 60, 0.45);
   box-shadow: 0 18px 50px rgba(251, 146, 60, 0.08);
 }
-.repo-head { display: flex; align-items: center; gap: 10px; }
-.repo-head svg { flex-shrink: 0; }
-.repo-name { font-family: var(--font-mono); font-weight: 700; color: var(--accent); font-size: 1rem; word-break: break-all; }
+.repo-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.proj-icon { font-size: 1.2rem; }
+.repo-name { font-family: var(--font-mono); font-weight: 700; color: var(--accent); font-size: 1rem; }
+.proj-status {
+  margin-left: auto; font-family: var(--font-mono); font-size: 0.68rem;
+  padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+}
+.st-live { color: #6ee7a0; border: 1px solid rgba(110, 231, 160, 0.35); }
+.st-local { color: var(--accent); border: 1px solid rgba(251, 191, 36, 0.35); }
+.st-internal { color: var(--muted); border: 1px solid var(--card-border); }
 .repo-desc { color: var(--muted); font-size: 0.9rem; flex: 1; }
-.repo-meta { display: flex; gap: 16px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); }
-.lang-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
-.loading-msg, .error-msg { font-family: var(--font-mono); color: var(--muted); grid-column: 1 / -1; }
+.repo-desc strong { color: var(--text); }
+.repo-meta { display: flex; gap: 8px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.repo-meta span {
+  background: rgba(251, 191, 36, 0.07); border: 1px solid rgba(251, 191, 36, 0.16);
+  color: #d9c8a8; padding: 3px 10px; border-radius: 999px;
+}
+.proj-link {
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
+  color: var(--accent); text-decoration: none; margin-top: 4px;
+}
+a.proj-link:hover { text-decoration: underline; }
+.proj-link-muted { color: var(--muted); font-weight: 500; }
 .more-link { margin-top: 26px; }
 .more-link a { color: var(--accent); text-decoration: none; font-weight: 700; font-family: var(--font-mono); font-size: 0.9rem; }
 .more-link a:hover { text-decoration: underline; }

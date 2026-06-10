@@ -287,13 +287,70 @@ moon  rama     nataraja
     </div>
   </section>
 
-  <!-- ============ PROJECTS (live from GitHub) ============ -->
+  <!-- ============ PROJECTS ============ -->
   <section id="projects" class="section reveal">
-    <h3 class="sec-title"><span>06.</span> Projects <small class="live-tag">● live from GitHub</small></h3>
-    <div class="repo-grid" id="repo-grid">
-      <p class="loading-msg">Fetching repositories from GitHub…</p>
+    <h3 class="sec-title"><span>06.</span> Things I've Built</h3>
+    <div class="repo-grid">
+      <div class="repo-card">
+        <div class="repo-head">
+          <span class="proj-icon">🌌</span>
+          <span class="repo-name">Brahmaand</span>
+          <span class="proj-status st-local">🏠 runs 100% locally</span>
+        </div>
+        <p class="repo-desc">
+          Autonomous multi-agent AI system — 12+ cooperating agents with hierarchical routing,
+          a Redis message bus and a Telegram gateway, all on local LLMs at <strong>$0/month cloud cost</strong>.
+        </p>
+        <div class="repo-meta"><span>Python</span><span>Ollama</span><span>Redis</span><span>Docker</span><span>LangGraph</span></div>
+        <a class="proj-link" href="#brahmaand">Read the full breakdown ↑</a>
+      </div>
+
+      <div class="repo-card">
+        <div class="repo-head">
+          <span class="proj-icon">☁️</span>
+          <span class="repo-name">cloudx.co.in</span>
+          <span class="proj-status st-live">● live</span>
+        </div>
+        <p class="repo-desc">
+          This very site — hand-coded vanilla HTML/CSS/JS with zero frameworks and zero build step.
+          Animated canvas starfield, custom domain on Cloudflare DNS, deployed to GitHub Pages by a plain
+          <strong>git push</strong>.
+        </p>
+        <div class="repo-meta"><span>HTML/CSS/JS</span><span>GitHub Pages</span><span>Cloudflare</span></div>
+        <a class="proj-link" href="https://github.com/AnjulUpadhyay/cloudx" target="_blank" rel="noopener">View source on GitHub →</a>
+      </div>
+
+      <div class="repo-card">
+        <div class="repo-head">
+          <span class="proj-icon">⚙️</span>
+          <span class="repo-name">Deploy Automation Framework</span>
+          <span class="proj-status st-internal">🔒 internal · Oracle</span>
+        </div>
+        <p class="repo-desc">
+          Automation framework for Oracle's core telecom products, built from the ground up —
+          took release deployments from <strong>3–4 days of manual work to 2 hours</strong>,
+          with observability wired in via Prometheus, Grafana and Loki.
+        </p>
+        <div class="repo-meta"><span>Jenkins</span><span>Helm</span><span>Kubernetes</span><span>Bash</span></div>
+        <span class="proj-link proj-link-muted">Proprietary — happy to talk through the design</span>
+      </div>
+
+      <div class="repo-card">
+        <div class="repo-head">
+          <span class="proj-icon">💰</span>
+          <span class="repo-name">On-Prem K8s Demo Lab</span>
+          <span class="proj-status st-internal">🔒 internal · Oracle</span>
+        </div>
+        <p class="repo-desc">
+          Replaced managed cloud Kubernetes (OKE) with kubeadm clusters on OpenStack for demo
+          environments — same K8s capabilities, <strong>zero per-node compute, LB and egress charges</strong>,
+          with Longhorn/NFS for storage.
+        </p>
+        <div class="repo-meta"><span>kubeadm</span><span>OpenStack</span><span>Longhorn</span><span>NFS</span></div>
+        <span class="proj-link proj-link-muted">Proprietary — architecture in Highlights above</span>
+      </div>
     </div>
-    <p class="more-link"><a href="https://github.com/AnjulUpadhyay" target="_blank" rel="noopener">See everything on GitHub →</a></p>
+    <p class="more-link"><a href="https://github.com/AnjulUpadhyay" target="_blank" rel="noopener">More experiments on GitHub →</a></p>
   </section>
 
   <!-- ============ CONTACT ============ -->
