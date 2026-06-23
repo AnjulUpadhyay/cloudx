@@ -1,4 +1,4 @@
-/* ============ cloudx // lab v4 — glass relic (Active-Theory-inspired) ============
+/* ============ cloudx // lab v5 — glass relic (Active-Theory-inspired) ============
    Pure black, a luminous refractive glass torus-knot with iridescent caustics,
    bloom, drifting dust, custom cursor, loader. */
 import * as THREE from "three";
@@ -27,7 +27,7 @@ renderer.toneMappingExposure = 1.15;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 0, 6);
+camera.position.set(0, 0, 5.4);
 
 /* environment for glass reflections */
 const pmrem = new THREE.PMREMGenerator(renderer);
@@ -35,24 +35,25 @@ scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
 /* ---------- glass relic ---------- */
 const group = new THREE.Group();
+group.position.set(0, 0.35, 0);
 scene.add(group);
 
-const geo = new THREE.TorusKnotGeometry(1.05, 0.34, 240, 36);
+const geo = new THREE.TorusKnotGeometry(1.0, 0.32, 280, 44);
 const mat = new THREE.MeshPhysicalMaterial({
-  transmission: 1.0, thickness: 1.6, roughness: 0.06, metalness: 0.0,
-  ior: 1.42, clearcoat: 1.0, clearcoatRoughness: 0.12,
-  iridescence: 1.0, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 760],
-  envMapIntensity: 1.5, color: 0xffffff,
-  attenuationColor: new THREE.Color(0x4fd2ff), attenuationDistance: 3.0,
+  transmission: 1.0, thickness: 1.1, roughness: 0.045, metalness: 0.0,
+  ior: 1.46, clearcoat: 1.0, clearcoatRoughness: 0.07,
+  iridescence: 1.0, iridescenceIOR: 1.38, iridescenceThicknessRange: [100, 920],
+  envMapIntensity: 2.1, color: 0xffffff,
+  attenuationColor: new THREE.Color(0x63d4ff), attenuationDistance: 2.3,
 });
 const relic = new THREE.Mesh(geo, mat);
 group.add(relic);
 
-/* colored rim lights for caustic tint */
-const l1 = new THREE.PointLight(0x6ee7ff, 40, 24); l1.position.set(4, 2, 4);
-const l2 = new THREE.PointLight(0xb07cff, 28, 24); l2.position.set(-4, -2, 2);
-const l3 = new THREE.PointLight(0xffffff, 14, 24); l3.position.set(0, 4, -3);
-scene.add(l1, l2, l3, new THREE.AmbientLight(0x223044, 0.6));
+/* colored rim lights for bright, readable caustic tint */
+const l1 = new THREE.PointLight(0x6ee7ff, 70, 30); l1.position.set(4, 2, 4);
+const l2 = new THREE.PointLight(0xc07cff, 50, 30); l2.position.set(-4, -2, 2);
+const l3 = new THREE.PointLight(0xffffff, 26, 30); l3.position.set(0, 4, -3);
+scene.add(l1, l2, l3, new THREE.HemisphereLight(0x335a7a, 0x000005, 0.8));
 
 /* ---------- drifting dust ---------- */
 const dustN = 1100, dpos = new Float32Array(dustN * 3);
@@ -72,7 +73,7 @@ scene.add(dust);
 /* ---------- post: bloom ---------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.82);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.45, 0.6);
 composer.addPass(bloom);
 
 /* ---------- interaction ---------- */
@@ -93,7 +94,7 @@ const clock = new THREE.Clock();
 function animate() {
   const t = clock.getElapsedTime();
   ptr.x += (ptr.tx - ptr.x) * 0.04; ptr.y += (ptr.ty - ptr.y) * 0.04;
-  group.rotation.y = (reduce ? 0.4 : t * 0.16) + dragX + ptr.x * 0.6;
+  group.rotation.y = (reduce ? 0.4 : t * 0.2) + dragX + ptr.x * 0.6;
   group.rotation.x = (reduce ? 0.2 : Math.sin(t * 0.25) * 0.18) + dragY + ptr.y * 0.4;
   dust.rotation.y = t * 0.015; dust.rotation.x = t * 0.008;
   l1.position.x = Math.cos(t * 0.5) * 4.5; l1.position.z = Math.sin(t * 0.5) * 4.5;
