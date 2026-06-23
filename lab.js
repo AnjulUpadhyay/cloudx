@@ -1,4 +1,4 @@
-/* ============ cloudx // lab v6 — vibrant energy orb (Active-Theory-inspired) ============
+/* ============ cloudx // lab v7 — vibrant energy orb (Active-Theory-inspired) ============
    Pure black, a living sphere that morphs and flows through cool vibrant color,
    bright fresnel rim, strong bloom, drifting dust, custom cursor, loader. */
 import * as THREE from "three";
@@ -21,11 +21,12 @@ const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
 renderer.setSize(innerWidth, innerHeight);
-renderer.toneMapping = THREE.NoToneMapping; // keep colors punchy/vibrant
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // compress highlights, keep color
+renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 0, 5.4);
+camera.position.set(0, 0, 5.8);
 
 /* ---------- vibrant energy orb (custom shader) ---------- */
 const group = new THREE.Group();
@@ -69,19 +70,19 @@ vec3 pal(float t){
 void main(){
   float fres = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), 2.2);
   vec3 col = pal(vN*3.2 + uTime*0.5);
-  col *= 0.85 + vN*0.5;                      // internal light variation
-  col += vec3(0.35,0.85,1.0) * fres * 1.5;   // bright cool rim glow
+  col *= 0.55 + vN*0.32;                      // internal light variation
+  col += vec3(0.40,0.85,1.0) * fres * 0.7;    // cool rim glow (peaks bloom)
   gl_FragColor = vec4(col, 1.0);
 }`;
 
 const orbMat = new THREE.ShaderMaterial({ uniforms, vertexShader: vert, fragmentShader: frag });
-const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45, 6), orbMat);
+const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 6), orbMat);
 group.add(orb);
 
 /* soft inner core glow */
 const core = new THREE.Mesh(
-  new THREE.IcosahedronGeometry(1.2, 3),
-  new THREE.MeshBasicMaterial({ color: 0x1740ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending })
+  new THREE.IcosahedronGeometry(0.95, 3),
+  new THREE.MeshBasicMaterial({ color: 0x1740ff, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending })
 );
 group.add(core);
 
@@ -103,7 +104,7 @@ scene.add(dust);
 /* ---------- bloom ---------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.6, 0.0);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.4, 0.72);
 composer.addPass(bloom);
 
 /* ---------- interaction ---------- */
