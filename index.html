@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <canvas id="galaxy"></canvas>
   <canvas id="sky"></canvas>
   <div class="aurora" aria-hidden="true"></div>
 
@@ -75,6 +76,11 @@
         <span class="term-title">anjul@cloudx: ~/infra</span>
       </div>
       <pre class="term-body" id="term-body"></pre>
+    </div>
+
+    <div class="tess-widget" aria-hidden="true">
+      <canvas id="tesseract" width="280" height="280"></canvas>
+      <span class="tess-label">4D · tesseract</span>
     </div>
   </header>
 
@@ -384,6 +390,10 @@ moon  rama     nataraja
     <p class="mono-note">© <span id="year"></span> · deployed via git push, as nature intended</p>
   </footer>
 
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
   <script src="script.js"></script>
+  <script type="module" src="galaxy.js"></script>
 </body>
 </html>

@@ -87,10 +87,13 @@ body {
 ::selection { background: rgba(var(--a1rgb), 0.35); }
 
 /* background canvas + aurora */
-#sky {
+#sky, #galaxy {
   position: fixed; inset: 0;
   z-index: -2;
 }
+#galaxy { display: none; }
+body.webgl #galaxy { display: block; }
+body.webgl #sky { display: none; }
 .aurora {
   position: fixed; inset: -20%;
   z-index: -1;
@@ -163,6 +166,7 @@ body { transition: background-color 0.6s ease, color 0.6s ease; }
 
 /* ============ HERO ============ */
 .hero {
+  position: relative;
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 48px;
@@ -171,6 +175,22 @@ body { transition: background-color 0.6s ease, color 0.6s ease; }
   padding: 48px clamp(20px, 6vw, 72px) 72px;
   max-width: 1280px; margin: 0 auto;
 }
+
+/* 4D tesseract ornament */
+.tess-widget {
+  position: absolute; right: clamp(16px, 4vw, 48px); bottom: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none; z-index: 4;
+  filter: drop-shadow(0 0 18px rgba(var(--a1rgb), 0.3));
+  animation: tessfloat 6s ease-in-out infinite;
+}
+#tesseract { width: 132px; height: 132px; }
+.tess-label {
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--muted); opacity: 0.85;
+}
+@keyframes tessfloat { 50% { transform: translateY(-10px); } }
+@media (max-width: 1100px) { .tess-widget { display: none; } }
 .kicker {
   font-family: var(--font-mono); color: var(--accent-3);
   font-size: 0.9rem; margin-bottom: 14px;
