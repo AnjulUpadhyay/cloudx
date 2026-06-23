@@ -1,139 +1,113 @@
-/* ============ cloudx // lab — breathing point-cloud orb (elegant, monochrome) ============ */
+/* ============ cloudx // lab — Active-Theory-inspired fluid hero ============
+   Full-screen GLSL flow field, cursor-reactive, loader + reveal + custom cursor. */
 import * as THREE from "three";
 
-const COL = { point: 0x9fd0ff, glow: 0x7cc7ff, bg: 0x080a0f };
-
-const canvas = document.getElementById("scene");
-const loading = document.getElementById("loading");
-
-let renderer;
-try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-} catch (e) {
-  loading.textContent = "this device can't run WebGL — try a desktop browser.";
-  throw e;
+/* ---------- custom cursor ---------- */
+const cur = document.getElementById("cursor");
+const dot = document.getElementById("cursorDot");
+const cs = { x: innerWidth / 2, y: innerHeight / 2, dx: innerWidth / 2, dy: innerHeight / 2 };
+addEventListener("pointermove", (e) => { cs.x = e.clientX; cs.y = e.clientY; dot.style.transform = `translate(${cs.x}px,${cs.y}px)`; });
+function cursorLoop() {
+  cs.dx += (cs.x - cs.dx) * 0.18; cs.dy += (cs.y - cs.dy) * 0.18;
+  cur.style.transform = `translate(${cs.dx}px,${cs.dy}px)`;
+  requestAnimationFrame(cursorLoop);
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+cursorLoop();
+document.querySelectorAll("[data-hover], a").forEach((el) => {
+  el.addEventListener("pointerenter", () => cur.classList.add("big"));
+  el.addEventListener("pointerleave", () => cur.classList.remove("big"));
+});
+
+/* ---------- WebGL fluid ---------- */
+const canvas = document.getElementById("gl");
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
+catch (e) { document.getElementById("loader").textContent = "WebGL unavailable"; throw e; }
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
 renderer.setSize(innerWidth, innerHeight);
-renderer.setClearColor(COL.bg, 1);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(COL.bg, 0.12);
-const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 0, 7);
+const cam = new THREE.Camera();
+const uniforms = {
+  u_time: { value: 0 },
+  u_res: { value: new THREE.Vector2(innerWidth, innerHeight) },
+  u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+};
 
-/* ---- the orb: fine points on a sphere, displaced by flowing noise ---- */
-const group = new THREE.Group();
-scene.add(group);
+const frag = `
+precision highp float;
+uniform float u_time; uniform vec2 u_res; uniform vec2 u_mouse;
+float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float noise(vec2 p){
+  vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);
+}
+float fbm(vec2 p){ float v=0.0,a=0.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.02; a*=0.5;} return v; }
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_res.xy;
+  vec2 p=uv; p.x*=u_res.x/u_res.y;
+  float t=u_time*0.06;
+  // domain-warped flow
+  vec2 q=vec2(fbm(p+vec2(0.0,t)), fbm(p+vec2(5.2,-t)));
+  vec2 r=vec2(fbm(p+1.7*q+vec2(8.3,2.8)+t*0.5), fbm(p+1.7*q+vec2(2.6,9.2)-t*0.4));
+  float f=fbm(p+2.4*r);
+  // palette: deep ink -> blue -> cyan neon
+  vec3 ink=vec3(0.02,0.03,0.06);
+  vec3 blue=vec3(0.05,0.22,0.5);
+  vec3 cyan=vec3(0.36,0.92,1.0);
+  vec3 col=mix(ink,blue,smoothstep(0.2,0.95,f));
+  col+=cyan*pow(smoothstep(0.55,1.0,f+0.25*length(r)),3.0)*0.7;
+  // cursor glow
+  vec2 m=u_mouse; m.x*=u_res.x/u_res.y;
+  float d=distance(p,m);
+  col+=cyan*0.5*exp(-d*4.5);
+  col+=blue*0.25*exp(-d*1.8);
+  // vignette
+  float vig=smoothstep(1.25,0.25,length(uv-0.5));
+  col*=vig;
+  gl_FragColor=vec4(col,1.0);
+}`;
 
-const R = 2.0;
-const baseGeo = new THREE.IcosahedronGeometry(R, 5); // dense, even point distribution
-const basePos = baseGeo.attributes.position.array.slice();
-const N = baseGeo.attributes.position.count;
-
-// deduplicate-ish not needed; render all as points
-const orbGeo = new THREE.BufferGeometry();
-orbGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(basePos), 3));
-const orbMat = new THREE.PointsMaterial({
-  color: COL.point, size: 0.018, sizeAttenuation: true,
-  transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending,
+const mat = new THREE.ShaderMaterial({
+  uniforms,
+  vertexShader: "void main(){ gl_Position=vec4(position.xy,0.0,1.0); }",
+  fragmentShader: frag,
 });
-const orb = new THREE.Points(orbGeo, orbMat);
-group.add(orb);
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
 
-// faint wireframe shell for structure
-const shell = new THREE.LineSegments(
-  new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(R * 1.001, 2)),
-  new THREE.LineBasicMaterial({ color: COL.glow, transparent: true, opacity: 0.08 })
-);
-group.add(shell);
-
-// a few drifting motes around the orb for depth
-const moteN = 600, motePos = new Float32Array(moteN * 3);
-for (let i = 0; i < moteN; i++) {
-  const r = 3 + Math.random() * 7, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
-  motePos[i * 3] = r * Math.sin(ph) * Math.cos(th);
-  motePos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th);
-  motePos[i * 3 + 2] = r * Math.cos(ph);
-}
-const moteGeo = new THREE.BufferGeometry();
-moteGeo.setAttribute("position", new THREE.BufferAttribute(motePos, 3));
-const motes = new THREE.Points(moteGeo, new THREE.PointsMaterial({
-  color: COL.glow, size: 0.02, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending,
-}));
-scene.add(motes);
-
-/* ---- layout: push the orb to the right on wide screens so text stays clear ---- */
-function layout() {
-  const wide = innerWidth / innerHeight > 1.05;
-  group.position.x = wide ? R * 1.15 : 0;
-  group.position.y = wide ? 0 : -R * 0.2;
-  const fit = wide ? 1 : Math.min(1, innerWidth / 720);
-  group.scale.setScalar(fit);
-}
-layout();
-
-/* ---- interaction ---- */
-const ptr = { x: 0, y: 0, tx: 0, ty: 0 };
-addEventListener("pointermove", (e) => { ptr.tx = e.clientX / innerWidth - 0.5; ptr.ty = e.clientY / innerHeight - 0.5; });
-let dragging = false, dragX = 0, lastX = 0;
-addEventListener("pointerdown", (e) => { dragging = true; lastX = e.clientX; });
-addEventListener("pointermove", (e) => { if (dragging) { dragX += (e.clientX - lastX) * 0.005; lastX = e.clientX; } });
-addEventListener("pointerup", () => { dragging = false; });
+const mouse = { tx: 0.5, ty: 0.5 };
+addEventListener("pointermove", (e) => { mouse.tx = e.clientX / innerWidth; mouse.ty = 1 - e.clientY / innerHeight; });
 addEventListener("resize", () => {
-  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
-  layout();
-  if (composer) composer.setSize(innerWidth, innerHeight);
+  uniforms.u_res.value.set(innerWidth, innerHeight);
 });
 
-/* ---- flowing displacement ---- */
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const pos = orbGeo.attributes.position.array;
-function displace(t) {
-  for (let i = 0; i < N; i++) {
-    const i3 = i * 3;
-    const bx = basePos[i3], by = basePos[i3 + 1], bz = basePos[i3 + 2];
-    // smooth multi-wave "noise" along the surface normal
-    const n =
-      Math.sin(bx * 1.6 + t * 0.9) * 0.5 +
-      Math.sin(by * 1.9 - t * 0.7) * 0.3 +
-      Math.sin(bz * 2.3 + t * 1.1) * 0.2;
-    const k = 1 + 0.11 * n;
-    pos[i3] = bx * k; pos[i3 + 1] = by * k; pos[i3 + 2] = bz * k;
-  }
-  orbGeo.attributes.position.needsUpdate = true;
-}
-
-/* ---- bloom (graceful fallback) ---- */
-let composer = null;
-async function setupBloom() {
-  try {
-    const { EffectComposer } = await import("three/addons/postprocessing/EffectComposer.js");
-    const { RenderPass } = await import("three/addons/postprocessing/RenderPass.js");
-    const { UnrealBloomPass } = await import("three/addons/postprocessing/UnrealBloomPass.js");
-    const c = new EffectComposer(renderer);
-    c.addPass(new RenderPass(scene, camera));
-    c.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.7, 0.6, 0.1));
-    return c;
-  } catch (e) { return null; }
-}
-
 const clock = new THREE.Clock();
-function animate() {
-  const t = clock.getElapsedTime();
-  if (!reduce) displace(t);
-  ptr.x += (ptr.tx - ptr.x) * 0.04;
-  ptr.y += (ptr.ty - ptr.y) * 0.04;
-  group.rotation.y = (reduce ? 0 : t * 0.05) + dragX + ptr.x * 0.5;
-  group.rotation.x = ptr.y * 0.35;
-  shell.rotation.y = -t * 0.03;
-  motes.rotation.y = t * 0.012;
-  camera.position.x += (ptr.x * 0.6 - camera.position.x) * 0.04;
-  camera.position.y += (-ptr.y * 0.4 - camera.position.y) * 0.04;
-  camera.lookAt(0, 0, 0);
-  if (composer) composer.render(); else renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+function render() {
+  uniforms.u_time.value = reduce ? 12.0 : clock.getElapsedTime();
+  uniforms.u_mouse.value.x += (mouse.tx - uniforms.u_mouse.value.x) * 0.06;
+  uniforms.u_mouse.value.y += (mouse.ty - uniforms.u_mouse.value.y) * 0.06;
+  renderer.render(scene, cam);
+  requestAnimationFrame(render);
 }
+render();
 
-setupBloom().then((c) => { composer = c; loading.classList.add("hidden"); animate(); });
+/* ---------- loader + reveal ---------- */
+const loader = document.getElementById("loader");
+const countEl = document.getElementById("count");
+const barfill = document.getElementById("barfill");
+let p = 0;
+const tick = setInterval(() => {
+  p += Math.max(1, (100 - p) * 0.08);
+  if (p >= 100) { p = 100; clearInterval(tick); finish(); }
+  countEl.textContent = Math.floor(p);
+  barfill.style.width = p + "%";
+}, 60);
+function finish() {
+  setTimeout(() => {
+    loader.classList.add("done");
+    document.getElementById("ui").parentElement.classList.add("ready");
+    document.body.classList.add("ready");
+  }, 250);
+}
