@@ -1,8 +1,7 @@
-/* ============ cloudx // lab v5 — glass relic (Active-Theory-inspired) ============
-   Pure black, a luminous refractive glass torus-knot with iridescent caustics,
-   bloom, drifting dust, custom cursor, loader. */
+/* ============ cloudx // lab v6 — vibrant energy orb (Active-Theory-inspired) ============
+   Pure black, a living sphere that morphs and flows through cool vibrant color,
+   bright fresnel rim, strong bloom, drifting dust, custom cursor, loader. */
 import * as THREE from "three";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
@@ -20,45 +19,76 @@ document.querySelectorAll("[data-hover], a").forEach((el) => {
 /* ---------- renderer ---------- */
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
 renderer.setSize(innerWidth, innerHeight);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMapping = THREE.NoToneMapping; // keep colors punchy/vibrant
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
 camera.position.set(0, 0, 5.4);
 
-/* environment for glass reflections */
-const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-
-/* ---------- glass relic ---------- */
+/* ---------- vibrant energy orb (custom shader) ---------- */
 const group = new THREE.Group();
-group.position.set(0, 0.35, 0);
+group.position.set(0, 0.3, 0);
 scene.add(group);
 
-const geo = new THREE.TorusKnotGeometry(1.0, 0.32, 280, 44);
-const mat = new THREE.MeshPhysicalMaterial({
-  transmission: 1.0, thickness: 1.1, roughness: 0.045, metalness: 0.0,
-  ior: 1.46, clearcoat: 1.0, clearcoatRoughness: 0.07,
-  iridescence: 1.0, iridescenceIOR: 1.38, iridescenceThicknessRange: [100, 920],
-  envMapIntensity: 2.1, color: 0xffffff,
-  attenuationColor: new THREE.Color(0x63d4ff), attenuationDistance: 2.3,
-});
-const relic = new THREE.Mesh(geo, mat);
-group.add(relic);
+const uniforms = { uTime: { value: 0 }, uMouse: { value: 0 } };
 
-/* colored rim lights for bright, readable caustic tint */
-const l1 = new THREE.PointLight(0x6ee7ff, 70, 30); l1.position.set(4, 2, 4);
-const l2 = new THREE.PointLight(0xc07cff, 50, 30); l2.position.set(-4, -2, 2);
-const l3 = new THREE.PointLight(0xffffff, 26, 30); l3.position.set(0, 4, -3);
-scene.add(l1, l2, l3, new THREE.HemisphereLight(0x335a7a, 0x000005, 0.8));
+const vert = `
+uniform float uTime;
+varying vec3 vNormal; varying vec3 vView; varying float vN;
+float wave(vec3 p, float t){
+  return sin(p.x*1.6+t)*0.45 + sin(p.y*1.9-t*0.9)*0.3 + sin(p.z*2.2+t*1.15)*0.22
+       + sin((p.x+p.z)*1.3+t*0.7)*0.18 + sin((p.y-p.x)*2.6-t*1.3)*0.12;
+}
+void main(){
+  vec3 n = normalize(position);
+  float w = wave(n*2.1, uTime);
+  vN = w;
+  vec3 p = position + normal * w * 0.26;
+  vec4 mv = modelViewMatrix * vec4(p,1.0);
+  vNormal = normalize(normalMatrix * normal);
+  vView = normalize(-mv.xyz);
+  gl_Position = projectionMatrix * mv;
+}`;
+
+const frag = `
+precision highp float;
+uniform float uTime;
+varying vec3 vNormal; varying vec3 vView; varying float vN;
+vec3 pal(float t){
+  vec3 blue   = vec3(0.10,0.32,1.00);
+  vec3 cyan   = vec3(0.15,0.95,1.00);
+  vec3 violet = vec3(0.55,0.28,1.00);
+  vec3 magenta= vec3(1.00,0.25,0.82);
+  vec3 c = mix(blue, cyan,   smoothstep(-0.6,0.6, sin(t)));
+  c = mix(c, violet,        smoothstep(-0.6,0.6, sin(t*1.27+1.3)));
+  c = mix(c, magenta, 0.45 * smoothstep(0.0,1.0, sin(t*0.8+2.1)));
+  return c;
+}
+void main(){
+  float fres = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), 2.2);
+  vec3 col = pal(vN*3.2 + uTime*0.5);
+  col *= 0.85 + vN*0.5;                      // internal light variation
+  col += vec3(0.35,0.85,1.0) * fres * 1.5;   // bright cool rim glow
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+const orbMat = new THREE.ShaderMaterial({ uniforms, vertexShader: vert, fragmentShader: frag });
+const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45, 6), orbMat);
+group.add(orb);
+
+/* soft inner core glow */
+const core = new THREE.Mesh(
+  new THREE.IcosahedronGeometry(1.2, 3),
+  new THREE.MeshBasicMaterial({ color: 0x1740ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending })
+);
+group.add(core);
 
 /* ---------- drifting dust ---------- */
-const dustN = 1100, dpos = new Float32Array(dustN * 3);
+const dustN = 700, dpos = new Float32Array(dustN * 3);
 for (let i = 0; i < dustN; i++) {
-  const r = 2.2 + Math.random() * 9, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+  const r = 3 + Math.random() * 9, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
   dpos[i * 3] = r * Math.sin(ph) * Math.cos(th);
   dpos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th);
   dpos[i * 3 + 2] = r * Math.cos(ph);
@@ -66,14 +96,14 @@ for (let i = 0; i < dustN; i++) {
 const dustGeo = new THREE.BufferGeometry();
 dustGeo.setAttribute("position", new THREE.BufferAttribute(dpos, 3));
 const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
-  color: 0x9fe8ff, size: 0.022, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending,
+  color: 0x86c8ff, size: 0.02, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending,
 }));
 scene.add(dust);
 
-/* ---------- post: bloom ---------- */
+/* ---------- bloom ---------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.45, 0.6);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.6, 0.0);
 composer.addPass(bloom);
 
 /* ---------- interaction ---------- */
@@ -93,13 +123,13 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const clock = new THREE.Clock();
 function animate() {
   const t = clock.getElapsedTime();
+  uniforms.uTime.value = reduce ? 4.0 : t * 0.8;
   ptr.x += (ptr.tx - ptr.x) * 0.04; ptr.y += (ptr.ty - ptr.y) * 0.04;
-  group.rotation.y = (reduce ? 0.4 : t * 0.2) + dragX + ptr.x * 0.6;
-  group.rotation.x = (reduce ? 0.2 : Math.sin(t * 0.25) * 0.18) + dragY + ptr.y * 0.4;
-  dust.rotation.y = t * 0.015; dust.rotation.x = t * 0.008;
-  l1.position.x = Math.cos(t * 0.5) * 4.5; l1.position.z = Math.sin(t * 0.5) * 4.5;
-  camera.position.x += (ptr.x * 0.8 - camera.position.x) * 0.04;
-  camera.position.y += (-ptr.y * 0.6 - camera.position.y) * 0.04;
+  group.rotation.y = (reduce ? 0.3 : t * 0.12) + dragX + ptr.x * 0.6;
+  group.rotation.x = (reduce ? 0.1 : Math.sin(t * 0.2) * 0.14) + dragY + ptr.y * 0.4;
+  dust.rotation.y = t * 0.015;
+  camera.position.x += (ptr.x * 0.7 - camera.position.x) * 0.04;
+  camera.position.y += (-ptr.y * 0.5 - camera.position.y) * 0.04;
   camera.lookAt(0, 0, 0);
   composer.render();
   requestAnimationFrame(animate);
@@ -110,10 +140,7 @@ const loader = document.getElementById("loader"), countEl = document.getElementB
 let p = 0;
 const tick = setInterval(() => {
   p += Math.max(1.2, (100 - p) * 0.07);
-  if (p >= 100) { p = 100; clearInterval(tick); reveal(); }
+  if (p >= 100) { p = 100; clearInterval(tick); setTimeout(() => { loader.classList.add("done"); document.body.classList.add("ready"); }, 250); }
   countEl.textContent = Math.floor(p); barfill.style.width = p + "%";
 }, 55);
-function reveal() {
-  setTimeout(() => { loader.classList.add("done"); document.body.classList.add("ready"); }, 250);
-}
 animate();
