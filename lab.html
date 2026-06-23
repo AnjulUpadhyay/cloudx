@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cloudx // immersive — preview</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("cloudx-theme") || "midnight";</script>
+  <style>
+    :root { --accent:#38bdf8; --accent2:#818cf8; --bg:#060913; --text:#e6edf7; --muted:#93a0b8; }
+    [data-theme="nebula"]   { --accent:#fbbf24; --accent2:#fb7185; --bg:#0e0815; --text:#f0eaf6; --muted:#a195b3; }
+    [data-theme="aurora"]   { --accent:#34d399; --accent2:#2dd4bf; --bg:#03100c; --text:#e9f6ef; --muted:#8fb3a4; }
+    [data-theme="synthwave"]{ --accent:#e879f9; --accent2:#22d3ee; --bg:#120420; --text:#f5ebff; --muted:#ad95c4; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { height:100%; }
+    body { background:var(--bg); color:var(--text); font-family:"Sora",system-ui,sans-serif; overflow:hidden; transition:background-color .6s ease; }
+    #scene { position:fixed; inset:0; z-index:0; display:block; }
+    .overlay { position:fixed; inset:0; z-index:2; pointer-events:none; display:flex; flex-direction:column; }
+    .top { display:flex; align-items:center; justify-content:space-between; padding:22px clamp(20px,5vw,54px); }
+    .logo { font-family:"JetBrains Mono",monospace; font-weight:700; font-size:1.2rem; color:var(--text); text-decoration:none; pointer-events:auto; }
+    .logo span { color:var(--accent); }
+    .right { display:flex; align-items:center; gap:16px; pointer-events:auto; }
+    .back { font-family:"JetBrains Mono",monospace; font-size:.82rem; color:var(--muted); text-decoration:none; }
+    .back:hover { color:var(--accent); }
+    .dots { display:flex; gap:8px; }
+    .dot { width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.25); cursor:pointer; padding:0; }
+    .dot:hover { transform:scale(1.2); }
+    .dot.active { border-color:#fff; box-shadow:0 0 9px rgba(255,255,255,.4); }
+    .dot[data-theme="midnight"]{ background:linear-gradient(135deg,#38bdf8,#818cf8);}
+    .dot[data-theme="nebula"]{ background:linear-gradient(135deg,#fbbf24,#fb7185);}
+    .dot[data-theme="aurora"]{ background:linear-gradient(135deg,#34d399,#2dd4bf);}
+    .dot[data-theme="synthwave"]{ background:linear-gradient(135deg,#22d3ee,#e879f9);}
+    .center { flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 clamp(20px,8vw,120px); }
+    .kicker { font-family:"JetBrains Mono",monospace; color:var(--accent); font-size:.9rem; letter-spacing:.12em; margin-bottom:14px; opacity:0; animation:rise .9s .2s ease forwards; }
+    h1 { font-size:clamp(2.8rem,8vw,6rem); font-weight:800; line-height:1.02; letter-spacing:-.02em; opacity:0; animation:rise .9s .4s ease forwards; }
+    h1 .g { background:linear-gradient(100deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .sub { margin-top:18px; max-width:46ch; color:var(--muted); font-size:clamp(1rem,2vw,1.2rem); opacity:0; animation:rise .9s .6s ease forwards; }
+    @keyframes rise { from { opacity:0; transform:translateY(22px);} to { opacity:1; transform:none; } }
+    .hint { padding:0 0 30px; text-align:center; font-family:"JetBrains Mono",monospace; font-size:.78rem; color:var(--muted); opacity:.8; }
+    .badge { position:fixed; bottom:16px; right:18px; z-index:3; font-family:"JetBrains Mono",monospace; font-size:.66rem; color:var(--muted); border:1px solid rgba(255,255,255,.12); padding:4px 10px; border-radius:999px; background:rgba(0,0,0,.3); }
+    .loading { position:fixed; inset:0; z-index:4; display:flex; align-items:center; justify-content:center; font-family:"JetBrains Mono",monospace; color:var(--muted); background:var(--bg); transition:opacity .6s ease; }
+    .loading.hidden { opacity:0; pointer-events:none; }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <div class="loading" id="loading">initialising 3D scene…</div>
+
+  <div class="overlay">
+    <div class="top">
+      <a class="logo" href="/">cloud<span>X</span></a>
+      <div class="right">
+        <div class="dots" id="dots">
+          <button class="dot" data-theme="midnight" aria-label="Midnight"></button>
+          <button class="dot" data-theme="nebula" aria-label="Nebula"></button>
+          <button class="dot" data-theme="aurora" aria-label="Aurora"></button>
+          <button class="dot" data-theme="synthwave" aria-label="Synthwave"></button>
+        </div>
+        <a class="back" href="/">← full site</a>
+      </div>
+    </div>
+    <div class="center">
+      <p class="kicker">// immersive preview · WIP</p>
+      <h1>Anjul <span class="g">Upadhyay</span></h1>
+      <p class="sub">Senior DevOps Engineer &amp; AI agent builder — moving your portfolio into real 3D space.</p>
+    </div>
+    <p class="hint">move your mouse · this is a work-in-progress preview at /lab.html</p>
+  </div>
+  <div class="badge">cloudx // lab</div>
+
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  } }
+  </script>
+  <script type="module" src="lab.js"></script>
+</body>
+</html>
