@@ -1,262 +1,328 @@
-/* ============ CloudX — dynamic bits ============ */
+/* ============ cloudx.os — interactive terminal shell ============ */
 
-/* ---- 0. Theme switcher ---- */
-const skyColors = { a1: "56,189,248", a2: "129,140,248", a3: "52,211,153" };
-function syncSkyColors() {
-  const cs = getComputedStyle(document.documentElement);
-  skyColors.a1 = cs.getPropertyValue("--a1rgb").trim() || skyColors.a1;
-  skyColors.a2 = cs.getPropertyValue("--a2rgb").trim() || skyColors.a2;
-  skyColors.a3 = cs.getPropertyValue("--a3rgb").trim() || skyColors.a3;
+const screen = document.getElementById("screen");
+const output = document.getElementById("output");
+const promptLine = document.getElementById("prompt-line");
+const cmdText = document.getElementById("cmd-text");
+const stdin = document.getElementById("stdin");
+
+/* ---- output helpers ---- */
+function scrollBottom() { screen.scrollTop = screen.scrollHeight; }
+function print(html = "", cls = "") {
+  const d = document.createElement("div");
+  d.className = "line" + (cls ? " " + cls : "");
+  d.innerHTML = html;
+  output.appendChild(d);
+  scrollBottom();
+  return d;
 }
+function gap() { print("", "gap"); }
+function esc(s) { return String(s).replace(/[&<>]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m])); }
+
+/* ---- theme ---- */
+const THEMES = ["midnight", "nebula", "aurora", "synthwave"];
 function applyTheme(name) {
+  if (!THEMES.includes(name)) return false;
   document.documentElement.dataset.theme = name;
   localStorage.setItem("cloudx-theme", name);
   document.querySelectorAll(".theme-dot").forEach((d) =>
-    d.classList.toggle("active", d.dataset.theme === name)
-  );
-  syncSkyColors();
-  dispatchEvent(new Event("themechange"));
+    d.classList.toggle("active", d.dataset.theme === name));
+  return true;
 }
 document.querySelectorAll(".theme-dot").forEach((d) =>
-  d.addEventListener("click", () => applyTheme(d.dataset.theme))
-);
+  d.addEventListener("click", () => { applyTheme(d.dataset.theme); focusInput(); }));
 applyTheme(document.documentElement.dataset.theme || "midnight");
 
-/* ---- 1. Typing effect ---- */
-const phrases = [
-  "Senior DevOps Engineer",
-  "I build AI agentic systems",
-  "OCI | GCP | AWS | OpenStack",
-  "Kubernetes · Terraform · LangGraph",
-  "deploys: 3-4 days → 2 hours",
-  "12+ agents · 100% local LLMs",
-  "terraform apply ✓",
-];
-const typedEl = document.getElementById("typed");
-let pi = 0, ci = 0, deleting = false;
+/* ============ content commands ============ */
+const commands = {};
 
-function typeLoop() {
-  const phrase = phrases[pi];
-  typedEl.textContent = phrase.slice(0, ci);
-  if (!deleting) {
-    if (ci < phrase.length) { ci++; setTimeout(typeLoop, 55 + Math.random() * 60); }
-    else { deleting = true; setTimeout(typeLoop, 1800); }
+commands.help = () => {
+  print('<span class="dim"># available commands — type one, or tap a chip below</span>');
+  const rows = [
+    ["about", "who I am, in one screen"],
+    ["skills", "the full toolbox"],
+    ["experience", "career timeline"],
+    ["certs", "certifications"],
+    ["projects", "things I've built"],
+    ["brahmaand", "flagship AI project (★)"],
+    ["stats", "career by the numbers"],
+    ["contact", "email · github · linkedin"],
+    ["theme", "theme <midnight|nebula|aurora|synthwave>"],
+    ["neofetch", "system summary"],
+    ["clear", "clear the screen"],
+  ];
+  rows.forEach(([c, d]) => print(`  <span class="g">${c.padEnd(11)}</span><span class="dim">${d}</span>`));
+};
+
+commands.about = () => {
+  print('<span class="dim">$ cat about.txt</span>');
+  print("<b>Anjul Upadhyay</b> — Senior DevOps Engineer @ <span class='g'>Oracle</span>, Bengaluru.");
+  gap();
+  print("I make deploys <b>boring</b>: infrastructure as code, CI/CD that catches");
+  print("problems before production does, and observability that surfaces issues");
+  print("before users notice. 7+ years across <span class='g'>OCI · GCP · AWS · OpenStack</span>.");
+  gap();
+  print("These days I also build <b>autonomous AI agent systems</b> — multi-agent");
+  print("orchestration with <span class='b'>LangChain</span>, <span class='b'>LangGraph</span> and local LLMs.");
+  gap();
+  print("<span class='dim'>next: try </span><span class='g'>skills</span><span class='dim'>, </span><span class='g'>experience</span><span class='dim'>, </span><span class='g'>projects</span><span class='dim'> or </span><span class='g'>brahmaand</span>");
+};
+commands.whoami = () => print("anjul-upadhyay · senior-devops-engineer · oracle · bengaluru");
+
+commands.skills = () => {
+  print('<span class="dim">$ ls ~/skills</span>');
+  const groups = [
+    ["Cloud", "Oracle Cloud (OCI) · Google Cloud · AWS · OpenStack"],
+    ["Containers", "Kubernetes · Docker · Podman · Helm · OKE · kubeadm"],
+    ["CI/CD & IaC", "Jenkins · GitLab CI · Terraform · Ansible"],
+    ["Observability", "Prometheus · Grafana · Loki · Promtail · Datadog · OpenSearch"],
+    ["AI / Agents", "LangChain · LangGraph · RAG · Vector DBs · Ollama · multi-agent"],
+    ["Networking", "VPC · Load Balancers · NAT · TCP/IP · DNS"],
+    ["Languages", "Python · Bash · Java · YAML"],
+  ];
+  groups.forEach(([k, v]) => print(`  <span class="label">${k.padEnd(14)}</span> ${v}`));
+};
+
+commands.experience = commands.exp = () => {
+  print('<span class="dim">$ git log --oneline ~/career</span>');
+  const jobs = [
+    ["Sep 2024 — now", "Senior Member of Technical Staff · Oracle",
+      ["Lead automation — cut deploys from 3–4 days to <b>2 hours</b>",
+       "Built automation frameworks for Oracle's core telecom products",
+       "Observability via Prometheus/Grafana/Loki · 99.9% uptime on OCI",
+       "Mentor engineers, drive DevOps best practices across teams"]],
+    ["Sep 2022 — Aug 2024", "Member of Technical Staff · Oracle",
+      ["CI/CD pipelines with Jenkins & GitLab CI",
+       "Deployed Oracle apps on Kubernetes with Helm",
+       "Automated infra & environment setup for on-prem and OCI"]],
+    ["Oct 2020 — Aug 2022", "Associate Member of Technical Staff · Oracle",
+      ["K8s deployments & early CI/CD for telecom core products",
+       "Built internal demo environments used across product teams"]],
+    ["Nov 2018 — Oct 2020", "Cloud Engineer · Powerup Cloud (acq. by LTI)",
+      ["Migrated <b>200+ servers</b> & MySQL DBs to Google Cloud",
+       "Secure production workloads on GCP & AWS",
+       "Cut cloud costs <b>20%</b> via architecture reviews & tuning"]],
+  ];
+  jobs.forEach(([date, role, items]) => {
+    gap();
+    print(`<span class="y">●</span> <span class="b">${role}</span>`);
+    print(`  <span class="dim">${date}</span>`);
+    items.forEach((it) => print(`    <span class="g">▹</span> ${it}`));
+  });
+};
+
+commands.certs = commands.certifications = () => {
+  print('<span class="dim">$ cat ~/certifications</span>');
+  ["Google Cloud — Professional Cloud Architect",
+   "Oracle Cloud Infrastructure — Architect Associate",
+   "Oracle Cloud Infrastructure — Foundations Certified Associate",
+   "Cisco Certified Network Associate (CCNA)",
+   "Networking in Google Cloud — Coursera Specialization",
+  ].forEach((c) => print(`  <span class="y">🏅</span> ${c}`));
+};
+
+commands.stats = () => {
+  print('<span class="dim">$ cat ~/metrics</span>');
+  const s = [
+    ["7+", "years in DevOps"],
+    ["200+", "servers migrated to cloud"],
+    ["99.9%", "uptime maintained"],
+    ["20%", "cloud costs cut"],
+    ["3-4d → 2h", "deployment time"],
+    ["12+", "AI agents in Brahmaand"],
+  ];
+  s.forEach(([n, l]) => print(`  <span class="g">${n.padEnd(11)}</span><span class="dim">${l}</span>`));
+};
+
+commands.projects = () => {
+  print('<span class="dim">$ ls ~/projects</span>');
+  const p = [
+    ["Brahmaand", "★ runs 100% locally",
+      "12+ agent autonomous AI system · local LLMs · $0/mo cloud cost",
+      "Python · Ollama · Redis · Docker · LangGraph", "brahmaand"],
+    ["cloudx.co.in", "● live",
+      "This site — an interactive terminal OS, hand-coded, zero frameworks",
+      "HTML · CSS · JS · GitHub Pages · Cloudflare", "https://github.com/AnjulUpadhyay/cloudx"],
+    ["Deploy Automation Framework", "🔒 internal · Oracle",
+      "Built from scratch — release deploys from 3–4 days to 2 hours",
+      "Jenkins · Helm · Kubernetes · Bash", null],
+    ["On-Prem K8s Demo Lab", "🔒 internal · Oracle",
+      "kubeadm on OpenStack replacing managed cloud K8s — big cost cut",
+      "kubeadm · OpenStack · Longhorn · NFS", null],
+  ];
+  p.forEach(([name, status, desc, stack, link]) => {
+    gap();
+    const title = link
+      ? (link.startsWith("http")
+          ? `<a href="${link}" target="_blank" rel="noopener">${name}</a>`
+          : `<span class="g">${name}</span>`)
+      : `<span class="g">${name}</span>`;
+    print(`  ${title}  <span class="tag${status.startsWith("🔒") ? " muted" : ""}">${status}</span>`);
+    print(`    <span class="dim">${desc}</span>`);
+    print(`    <span class="b">${stack}</span>`);
+    if (link && !link.startsWith("http")) print(`    <span class="dim">→ type </span><span class="g">${link}</span>`);
+  });
+};
+
+commands.brahmaand = () => {
+  print('<span class="dim">$ ./brahmaand --status   # ब्रह्माण्ड · "the universe"</span>');
+  print("<b>Brahmaand</b> — a fully autonomous, containerized <b>multi-agent AI system</b>");
+  print("I designed from scratch: <b>12+ cooperating agents</b> modeled on Hindu");
+  print("cosmology, where each deity's cosmic role maps to a system function.");
+  gap();
+  ["Hierarchical orchestration — a supreme router delegates to the Trinity,",
+   "  which manifests specialist avatar agents per task",
+   "Runs <b>100% on local LLMs</b> via Ollama — zero cloud cost, full privacy",
+   "Redis pub/sub bus across independently containerized agents (Docker)",
+   "Driven from anywhere via a Telegram gateway over a secure tunnel",
+  ].forEach((l) => print(`  <span class="y">✦</span> ${l}`));
+  gap();
+  const tree = [
+    "        You (Telegram)",
+    "              │",
+    "         [ INDRA ]  gateway",
+    "              │",
+    "        [ PARAMATMA ]  supreme router",
+    "         ┌────┼─────────┐",
+    "         ▼    ▼         ▼",
+    "      BRAHMA VISHNU   SHIVA",
+    "      create preserve destroy",
+    "         │     │        │",
+    "       agni  krishna  rudra",
+    "       moon  rama     nataraja",
+    "             narasimha mahakala",
+    "              │",
+    "        result → Telegram ✓",
+  ];
+  tree.forEach((l) => print(`<span class="art">${esc(l)}</span>`));
+};
+
+commands.contact = commands.social = () => {
+  print('<span class="dim">$ cat ~/contact</span>');
+  print(`  <span class="label">email   </span> <a href="mailto:akanjulupadhyay@gmail.com">akanjulupadhyay@gmail.com</a>`);
+  print(`  <span class="label">github  </span> <a href="https://github.com/AnjulUpadhyay" target="_blank" rel="noopener">github.com/AnjulUpadhyay</a>`);
+  print(`  <span class="label">linkedin</span> <a href="https://www.linkedin.com/in/anjul-upadhyay-2328b69a/" target="_blank" rel="noopener">in/anjul-upadhyay</a>`);
+  print(`  <span class="label">location</span> Bengaluru, Karnataka, India`);
+  gap();
+  print('<span class="dim">open to interesting cloud / DevOps / AI roles — say hi 👋</span>');
+};
+
+commands.theme = (args) => {
+  const t = (args[0] || "").toLowerCase();
+  if (!t) { print(`current theme: <span class="g">${document.documentElement.dataset.theme}</span> · options: ${THEMES.join(" · ")}`); return; }
+  if (applyTheme(t)) print(`theme set to <span class="g">${t}</span> ✓`);
+  else print(`<span class="err">unknown theme: ${esc(t)}</span> · options: ${THEMES.join(" · ")}`);
+};
+
+commands.neofetch = commands.banner = () => {
+  const art = [
+    "      .--.       ",
+    "   .-(    ).     ",
+    "  (___.__)__)    ",
+    "                 ",
+  ];
+  const info = [
+    `<span class="label">anjul</span>@<span class="label">cloudx</span>`,
+    `<span class="dim">-----------------</span>`,
+    `<span class="label">OS</span>      cloudx.os 5.0`,
+    `<span class="label">host</span>    Senior DevOps Engineer`,
+    `<span class="label">uptime</span>  7+ years`,
+    `<span class="label">clouds</span>  OCI · GCP · AWS · OpenStack`,
+    `<span class="label">stack</span>   k8s · terraform · jenkins · langgraph`,
+    `<span class="label">certs</span>   GCP PCA · OCI Architect · CCNA`,
+    `<span class="label">email</span>   akanjulupadhyay@gmail.com`,
+  ];
+  const rows = Math.max(art.length, info.length);
+  for (let i = 0; i < rows; i++) {
+    const a = art[i] ? `<span class="art">${esc(art[i])}</span>` : "                 ";
+    print(`${a}${info[i] || ""}`);
+  }
+};
+
+commands.clear = () => { output.innerHTML = ""; };
+commands.ls = () => print("about  skills  experience  certs  projects  brahmaand  stats  contact");
+commands.echo = (args) => print(esc(args.join(" ")));
+commands.date = () => print(new Date().toString());
+commands.sudo = () => print('<span class="err">nice try.</span> <span class="dim">you already have everything you need 😏</span>');
+commands.exit = () => print('<span class="dim">there is no exit — just </span><span class="g">contact</span><span class="dim"> me 🙂</span>');
+
+/* ============ shell ============ */
+const history = [];
+let hIndex = -1;
+
+function showPrompt(text) {
+  print(`<span class="ps1"><span class="u">anjul@cloudx</span><span class="c">:</span><span class="p">~</span><span class="c">$</span> </span>${esc(text)}`);
+}
+function run(raw) {
+  const line = raw.trim();
+  showPrompt(raw);
+  if (line) {
+    history.unshift(line);
+    const [name, ...args] = line.split(/\s+/);
+    const fn = commands[name.toLowerCase()];
+    if (fn) fn(args);
+    else print(`<span class="err">command not found: ${esc(name)}</span> — type <span class="g">help</span>`);
+  }
+  hIndex = -1;
+  gap();
+  scrollBottom();
+}
+
+function focusInput() { stdin.focus({ preventScroll: true }); }
+stdin.addEventListener("input", () => { cmdText.textContent = stdin.value; scrollBottom(); });
+stdin.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    run(stdin.value);
+    stdin.value = ""; cmdText.textContent = "";
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (hIndex < history.length - 1) hIndex++;
+    if (history[hIndex]) { stdin.value = history[hIndex]; cmdText.textContent = stdin.value; }
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (hIndex > 0) { hIndex--; stdin.value = history[hIndex]; }
+    else { hIndex = -1; stdin.value = ""; }
+    cmdText.textContent = stdin.value;
+  } else if (e.key === "l" && e.ctrlKey) {
+    e.preventDefault(); commands.clear();
+  }
+});
+document.getElementById("chips").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-cmd]");
+  if (!btn) return;
+  run(btn.dataset.cmd);
+  focusInput();
+});
+document.getElementById("win").addEventListener("click", (e) => {
+  if (!e.target.closest("a, button")) focusInput();
+});
+
+/* ============ boot sequence ============ */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const boot = [
+  ['dim', "cloudx.os 5.0  ·  booting anjul@cloudx ..."],
+  ['ok',  "[ OK ]  mounting /skills /experience /projects"],
+  ['ok',  "[ OK ]  connecting clouds ... OCI · GCP · AWS · OpenStack"],
+  ['ok',  "[ OK ]  starting kubernetes control plane (v1.36)"],
+  ['ok',  "[ OK ]  launching brahmaand multi-agent runtime (12 agents)"],
+  ['ok',  "[ OK ]  observability online · prometheus · grafana · loki"],
+  ['g',   "system ready."],
+];
+let bi = 0;
+function bootStep() {
+  if (bi < boot.length) {
+    const [cls, text] = boot[bi++];
+    print(`<span class="${cls === 'ok' ? 'ok' : cls}">${esc(text)}</span>`);
+    setTimeout(bootStep, reduce ? 0 : 220);
   } else {
-    if (ci > 0) { ci--; setTimeout(typeLoop, 28); }
-    else { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(typeLoop, 350); }
+    gap();
+    commands.neofetch();
+    gap();
+    print('<span class="dim">welcome — this portfolio is a terminal. type </span><span class="g">help</span><span class="dim"> or tap a command below.</span>');
+    gap();
+    promptLine.hidden = false;
+    scrollBottom();
+    focusInput();
   }
 }
-typeLoop();
-
-/* ---- 2. Terminal boot sequence ---- */
-const termLines = [
-  ['c-dim',    '# cloudx.co.in — infrastructure status'],
-  ['c-green',  '$ whoami'],
-  ['',         'anjul-upadhyay · senior-devops-engineer · oracle · bengaluru'],
-  ['c-green',  '$ cloud --list-providers'],
-  ['c-blue',   '  ✓ oci        [active]'],
-  ['c-blue',   '  ✓ gcp        [certified architect]'],
-  ['c-blue',   '  ✓ aws        [active]'],
-  ['c-blue',   '  ✓ openstack  [active]'],
-  ['c-green',  '$ kubectl version --short'],
-  ['',         '  Server Version: v1.36 · upgraded with zero data loss'],
-  ['c-green',  '$ brahmaand status'],
-  ['c-purple', '  AGENT      STATUS    MODEL       COST'],
-  ['',         '  12 agents  Running   local-llm   $0.00/mo'],
-  ['c-green',  '$ uptime'],
-  ['',         '  99.9% · deploys in 2h, down from 3-4 days ☕'],
-  ['c-green',  '$ echo "let\'s build something." '],
-  ['c-purple', '  let\'s build something.'],
-];
-const termBody = document.getElementById("term-body");
-let li = 0;
-function bootLine() {
-  if (li >= termLines.length) return;
-  const [cls, text] = termLines[li];
-  const span = document.createElement("span");
-  if (cls) span.className = cls;
-  span.textContent = text + "\n";
-  termBody.appendChild(span);
-  li++;
-  setTimeout(bootLine, text.startsWith("$") ? 520 : 200);
-}
-setTimeout(bootLine, 600);
-
-/* ---- 3. Particle network background ---- */
-const canvas = document.getElementById("sky");
-const ctx = canvas.getContext("2d");
-let W, H, particles;
-const mouse = { x: -9999, y: -9999 };
-
-function initSky() {
-  W = canvas.width = innerWidth;
-  H = canvas.height = innerHeight;
-  const count = Math.min(110, Math.floor((W * H) / 16000));
-  particles = Array.from({ length: count }, () => ({
-    x: Math.random() * W,
-    y: Math.random() * H,
-    vx: (Math.random() - 0.5) * 0.35,
-    vy: (Math.random() - 0.5) * 0.35,
-    r: Math.random() * 1.6 + 0.4,
-  }));
-}
-function drawSky() {
-  ctx.clearRect(0, 0, W, H);
-  for (const p of particles) {
-    p.x += p.vx; p.y += p.vy;
-    if (p.x < 0 || p.x > W) p.vx *= -1;
-    if (p.y < 0 || p.y > H) p.vy *= -1;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${skyColors.a1},0.5)`;
-    ctx.fill();
-  }
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const a = particles[i], b = particles[j];
-      const d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (d < 130) {
-        ctx.strokeStyle = `rgba(${skyColors.a2},${(1 - d / 130) * 0.17})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-      }
-    }
-    const m = particles[i];
-    const dm = Math.hypot(m.x - mouse.x, m.y - mouse.y);
-    if (dm < 170) {
-      ctx.strokeStyle = `rgba(${skyColors.a3},${(1 - dm / 170) * 0.35})`;
-      ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
-    }
-  }
-  requestAnimationFrame(drawSky);
-}
-addEventListener("resize", initSky);
-addEventListener("mousemove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-addEventListener("mouseout", () => { mouse.x = -9999; mouse.y = -9999; });
-
-// Run the 2D starfield only when the WebGL galaxy can't take over.
-function webglOK() {
-  try {
-    const c = document.createElement("canvas");
-    return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
-  } catch (e) { return false; }
-}
-function startSky2D() { if (!sky2dStarted) { sky2dStarted = true; initSky(); drawSky(); } }
-let sky2dStarted = false;
-if (!webglOK()) {
-  startSky2D();
-} else {
-  // Safety net: if the Three.js module fails to load, revive the 2D sky.
-  setTimeout(() => { if (!document.body.classList.contains("webgl")) startSky2D(); }, 2500);
-}
-
-/* ---- 4. Scroll reveal ---- */
-const io = new IntersectionObserver(
-  (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
-  { threshold: 0, rootMargin: "0px 0px -8% 0px" }
-);
-document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
-
-/* ---- 5. Animated counters ---- */
-const counterIO = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (!entry.isIntersecting) return;
-    const el = entry.target;
-    const target = +el.dataset.count;
-    const suffix = el.dataset.suffix || "";
-    const decimals = el.dataset.count.includes(".") ? 1 : 0;
-    const dur = 1400, t0 = performance.now();
-    (function tick(t) {
-      const k = Math.min((t - t0) / dur, 1);
-      el.textContent = (target * (1 - Math.pow(1 - k, 3))).toFixed(decimals) + suffix;
-      if (k < 1) requestAnimationFrame(tick);
-    })(t0);
-    counterIO.unobserve(el);
-  });
-}, { threshold: 0.6 });
-document.querySelectorAll(".num").forEach((el) => counterIO.observe(el));
-
-/* ---- 6. Footer year ---- */
-document.getElementById("year").textContent = new Date().getFullYear();
-
-/* ---- 7. 4D tesseract (a hypercube rotating through 4D, projected to 2D) ---- */
-(function tesseract() {
-  const cv = document.getElementById("tesseract");
-  if (!cv || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const c = cv.getContext("2d");
-
-  // 16 vertices of the 4-cube: every (±1,±1,±1,±1)
-  const verts = [];
-  for (let i = 0; i < 16; i++)
-    verts.push([(i & 1) ? 1 : -1, (i & 2) ? 1 : -1, (i & 4) ? 1 : -1, (i & 8) ? 1 : -1]);
-  // edges connect vertices differing in exactly one coordinate
-  const edges = [];
-  for (let i = 0; i < 16; i++)
-    for (let j = i + 1; j < 16; j++) {
-      let diff = 0;
-      for (let k = 0; k < 4; k++) if (verts[i][k] !== verts[j][k]) diff++;
-      if (diff === 1) edges.push([i, j]);
-    }
-  const rot = (p, a, i, j) => {
-    const s = Math.sin(a), co = Math.cos(a), pi = p[i], pj = p[j];
-    p[i] = pi * co - pj * s; p[j] = pi * s + pj * co;
-  };
-
-  let t = 0;
-  function draw() {
-    t += 0.012;
-    const dpr = Math.min(devicePixelRatio, 2);
-    const w = cv.clientWidth || 140, h = cv.clientHeight || 140;
-    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
-    c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    c.clearRect(0, 0, w, h);
-    const cx = w / 2, cy = h / 2, scale = Math.min(w, h) * 1.85;
-
-    const proj = verts.map((v) => {
-      const p = v.slice();
-      rot(p, t * 0.7, 0, 3); // XW plane
-      rot(p, t * 0.5, 1, 3); // YW plane
-      rot(p, t * 0.9, 2, 3); // ZW plane
-      rot(p, t * 0.6, 0, 1); // XY plane
-      const k4 = 1 / (3 - p[3]);           // 4D -> 3D perspective
-      const x = p[0] * k4, y = p[1] * k4, z = p[2] * k4;
-      const k3 = 1 / (3 - z);              // 3D -> 2D perspective
-      return { x: cx + x * k3 * scale, y: cy + y * k3 * scale, k: k3 };
-    });
-
-    const a1 = skyColors.a1, a2 = skyColors.a2;
-    for (const [i, j] of edges) {
-      const p = proj[i], q = proj[j];
-      const g = c.createLinearGradient(p.x, p.y, q.x, q.y);
-      g.addColorStop(0, `rgba(${a1},0.85)`);
-      g.addColorStop(1, `rgba(${a2},0.5)`);
-      c.strokeStyle = g; c.lineWidth = 1.1;
-      c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(q.x, q.y); c.stroke();
-    }
-    for (const p of proj) {
-      c.fillStyle = `rgba(${a1},0.9)`;
-      c.beginPath(); c.arc(p.x, p.y, 1.7, 0, 7); c.fill();
-    }
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
-/* ---- 8. 3D parallax tilt on cards ---- */
-if (matchMedia("(hover: hover) and (pointer: fine)").matches &&
-    !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  document.querySelectorAll(".skill-card, .work-card, .repo-card, .stat, .about-card").forEach((el) => {
-    el.addEventListener("pointermove", (e) => {
-      const r = el.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width - 0.5;
-      const py = (e.clientY - r.top) / r.height - 0.5;
-      el.style.transition = "transform .08s ease-out";
-      el.style.transform =
-        `perspective(820px) rotateX(${(-py * 7).toFixed(2)}deg) rotateY(${(px * 9).toFixed(2)}deg) translateZ(10px)`;
-    });
-    el.addEventListener("pointerleave", () => {
-      el.style.transition = "transform .5s ease";
-      el.style.transform = "";
-    });
-  });
-}
+bootStep();
