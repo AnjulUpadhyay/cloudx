@@ -47,120 +47,39 @@ function typeLoop() {
 }
 typeLoop();
 
-/* ---- 2. N-dimensional hypercube (3D · 4D · 5D · 6D · 7D · …) ---- */
-(function hypercube() {
-  const cv = document.getElementById("hcube");
-  if (!cv) return;
-  const c = cv.getContext("2d");
-  const NAMES = { 3: "cube", 4: "tesseract", 5: "penteract", 6: "hexeract", 7: "hepteract" };
-  const caption = document.getElementById("dim-caption");
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  let D = 4, verts = [], edges = [];
-  function build(dim) {
-    D = dim;
-    verts = [];
-    for (let i = 0; i < (1 << D); i++) {
-      const v = [];
-      for (let k = 0; k < D; k++) v.push((i & (1 << k)) ? 1 : -1);
-      verts.push(v);
-    }
-    edges = [];
-    for (let i = 0; i < verts.length; i++)
-      for (let j = i + 1; j < verts.length; j++) {
-        let diff = 0;
-        for (let k = 0; k < D; k++) if (verts[i][k] !== verts[j][k]) diff++;
-        if (diff === 1) edges.push([i, j]);
-      }
-    if (caption)
-      caption.innerHTML =
-        `<b>${NAMES[D] || D + "-cube"}</b> · ${D}-cube — ${verts.length} vertices · ${edges.length} edges`;
-  }
-  build(4);
-
-  const rot = (p, a, i, j) => {
-    const s = Math.sin(a), co = Math.cos(a), pi = p[i], pj = p[j];
-    p[i] = pi * co - pj * s; p[j] = pi * s + pj * co;
-  };
-
-  // drag to rotate the spatial planes
-  let ax = 0.5, ay = 0.6, dragging = false, lastX = 0, lastY = 0;
-  cv.addEventListener("pointerdown", (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; cv.setPointerCapture(e.pointerId); });
-  cv.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    ay += (e.clientX - lastX) * 0.01;
-    ax += (e.clientY - lastY) * 0.01;
-    lastX = e.clientX; lastY = e.clientY;
-  });
-  const stop = () => { dragging = false; };
-  cv.addEventListener("pointerup", stop);
-  cv.addEventListener("pointerleave", stop);
-
-  let t = 0;
-  function frame() {
-    t += reduce ? 0 : 0.016;
-    const dpr = Math.min(devicePixelRatio, 2);
-    const w = cv.clientWidth || 420, h = cv.clientHeight || 420;
-    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
-    c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    c.clearRect(0, 0, w, h);
-    const cx = w / 2, cy = h / 2;
-    const spin = dragging || reduce ? 0 : t * 0.25; // gentle auto-spin when idle
-
-    // project every vertex to raw 2D (centered at 0), then auto-fit
-    const raw = verts.map((vert) => {
-      const p = vert.slice();
-      rot(p, ax, 0, 2);
-      rot(p, ay + spin, 1, 2);
-      rot(p, t * 0.3, 0, 1);
-      for (let j = 3; j < D; j++)
-        for (let i = 0; i < j; i++) rot(p, t * (0.16 + 0.05 * j + 0.012 * i), i, j);
-      // collapse higher dims down to 3 via perspective
-      for (let k = D - 1; k >= 3; k--) {
-        const wv = 1 / (2.7 - p[k]);
-        for (let i = 0; i < k; i++) p[i] *= wv;
-      }
-      const s = 1 / (3 - p[2]);
-      return { x: p[0] * s, y: p[1] * s, depth: p[2] };
-    });
-
-    let maxAbs = 0.0001;
-    for (const r of raw) { maxAbs = Math.max(maxAbs, Math.abs(r.x), Math.abs(r.y)); }
-    const scale = (Math.min(w, h) * 0.42) / maxAbs;
-    let dMin = Infinity, dMax = -Infinity;
-    for (const r of raw) { dMin = Math.min(dMin, r.depth); dMax = Math.max(dMax, r.depth); }
-    const pts = raw.map((r) => ({ x: cx + r.x * scale, y: cy + r.y * scale, depth: r.depth }));
-
-    const a1 = skyColors.a1, a2 = skyColors.a2;
-    c.lineWidth = 1.1; c.lineJoin = "round";
-    c.shadowColor = `rgba(${a1},0.8)`; c.shadowBlur = 8;
-    for (const [i, j] of edges) {
-      const p = pts[i], q = pts[j];
-      const dn = ((p.depth + q.depth) / 2 - dMin) / ((dMax - dMin) || 1); // 0 far → 1 near
-      const al = 0.25 + dn * 0.7;
-      const g = c.createLinearGradient(p.x, p.y, q.x, q.y);
-      g.addColorStop(0, `rgba(${a1},${al})`);
-      g.addColorStop(1, `rgba(${a2},${al * 0.8})`);
-      c.strokeStyle = g;
-      c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(q.x, q.y); c.stroke();
-    }
-    c.shadowBlur = 0;
-    for (const p of pts) {
-      const dn = (p.depth - dMin) / ((dMax - dMin) || 1);
-      c.fillStyle = `rgba(${a1},${0.5 + dn * 0.5})`;
-      c.beginPath(); c.arc(p.x, p.y, 1.4 + dn * 1.6, 0, 7); c.fill();
-    }
-    requestAnimationFrame(frame);
-  }
-  frame();
-
-  document.getElementById("dim-dial").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-d]");
-    if (!b) return;
-    document.querySelectorAll("#dim-dial button").forEach((x) => x.classList.toggle("active", x === b));
-    build(+b.dataset.d);
-  });
-})();
+/* ---- 2. Terminal boot sequence ---- */
+const termLines = [
+  ['c-dim',    '# cloudx.co.in — infrastructure status'],
+  ['c-green',  '$ whoami'],
+  ['',         'anjul-upadhyay · senior-devops-engineer · oracle · bengaluru'],
+  ['c-green',  '$ cloud --list-providers'],
+  ['c-blue',   '  ✓ oci        [active]'],
+  ['c-blue',   '  ✓ gcp        [certified architect]'],
+  ['c-blue',   '  ✓ aws        [active]'],
+  ['c-blue',   '  ✓ openstack  [active]'],
+  ['c-green',  '$ kubectl version --short'],
+  ['',         '  Server Version: v1.36 · upgraded with zero data loss'],
+  ['c-green',  '$ brahmaand status'],
+  ['c-purple', '  AGENT      STATUS    MODEL       COST'],
+  ['',         '  12 agents  Running   local-llm   $0.00/mo'],
+  ['c-green',  '$ uptime'],
+  ['',         '  99.9% · deploys in 2h, down from 3-4 days ☕'],
+  ['c-green',  '$ echo "let\'s build something." '],
+  ['c-purple', '  let\'s build something.'],
+];
+const termBody = document.getElementById("term-body");
+let li = 0;
+function bootLine() {
+  if (li >= termLines.length) return;
+  const [cls, text] = termLines[li];
+  const span = document.createElement("span");
+  if (cls) span.className = cls;
+  span.textContent = text + "\n";
+  termBody.appendChild(span);
+  li++;
+  setTimeout(bootLine, text.startsWith("$") ? 520 : 200);
+}
+setTimeout(bootLine, 600);
 
 /* ---- 3. Particle network background ---- */
 const canvas = document.getElementById("sky");

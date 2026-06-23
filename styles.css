@@ -469,37 +469,3 @@ a.proj-link:hover { text-decoration: underline; }
   .about-grid { grid-template-columns: 1fr; }
   .nav-links { display: none; }
 }
-
-/* ============ hypercube hero widget ============ */
-.hypercube {
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  justify-self: center;
-}
-#hcube {
-  width: min(440px, 78vw); height: min(440px, 78vw);
-  cursor: grab; touch-action: none;
-  filter: drop-shadow(0 0 40px rgba(var(--a1rgb), 0.18));
-}
-#hcube:active { cursor: grabbing; }
-.dim-caption {
-  font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted);
-  text-align: center; min-height: 1.4em;
-}
-.dim-caption b { color: var(--accent); font-weight: 700; }
-.dim-dial { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.dim-label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.18em; color: var(--muted); margin-right: 2px; }
-.dim-dial button {
-  font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; cursor: pointer;
-  color: var(--muted); background: transparent;
-  border: 1px solid var(--card-border); border-radius: 9px; padding: 7px 13px;
-  transition: color .18s, background .18s, border-color .18s, box-shadow .18s;
-}
-.dim-dial button:hover { color: var(--accent); border-color: var(--accent); }
-.dim-dial button.active {
-  color: var(--on-accent); background: var(--accent); border-color: var(--accent);
-  box-shadow: 0 0 18px rgba(var(--a1rgb), 0.4);
-}
-.dim-hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--dim); text-align: center; }
-@media (max-width: 960px) {
-  #hcube { width: min(360px, 82vw); height: min(360px, 82vw); }
-}
