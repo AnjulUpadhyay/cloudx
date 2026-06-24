@@ -99,13 +99,14 @@
     .scrollhint i{ width:1px; height:26px; background:linear-gradient(var(--neon),transparent); display:block; animation:drop 1.8s infinite; }
     @keyframes drop{ 0%{ transform:scaleY(0); transform-origin:top; } 50%{ transform:scaleY(1); transform-origin:top; } 51%{ transform-origin:bottom; } 100%{ transform:scaleY(0); transform-origin:bottom; } }
 
-    /* ---------- content (translucent — dust field shows through) ---------- */
+    /* ---------- content (translucent — dust + crystal show through) ---------- */
     .content{ position:relative; z-index:6; background:
       radial-gradient(1200px 600px at 80% -5%, rgba(var(--rgb),.06), transparent 60%),
       radial-gradient(1000px 500px at 0% 30%, rgba(157,123,255,.05), transparent 55%),
-      linear-gradient(180deg, rgba(0,0,3,.78) 0%, rgba(0,0,3,.86) 22%, rgba(0,0,3,.86) 100%);
-      backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+      linear-gradient(180deg, rgba(0,0,4,.42) 0%, rgba(0,0,4,.58) 16%, rgba(0,0,4,.64) 100%);
       border-top:1px solid var(--line); }
+    /* open body text gets a soft shadow so it reads over the dust */
+    .about-grid p, .contact-lede, .tl-item li, .tl-item h4, .tl-date, .feat-points li{ text-shadow:0 1px 16px rgba(0,0,2,.7); }
     .section{ max-width:var(--maxw); margin:0 auto; padding:clamp(70px,11vh,130px) clamp(20px,5vw,40px); }
     .sec-title{ font-family:"Clash Display","Sora",sans-serif; font-size:clamp(1.7rem,3.6vw,2.7rem); font-weight:600;
       letter-spacing:-.01em; margin-bottom:42px; display:flex; align-items:baseline; gap:14px; }
@@ -224,6 +225,25 @@
     /* footer */
     .footer{ border-top:1px solid var(--line); text-align:center; padding:38px 20px; color:var(--muted); font-size:.86rem; }
     .footer .mono-note{ margin-top:8px; text-align:center; }
+
+    /* ===== glass cards + interactive 3D hover (overrides) ===== */
+    .stat,.about-card,.skill-card,.work-card,.repo-card{
+      background:rgba(8,10,18,.62); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      position:relative; overflow:hidden; transform-style:preserve-3d;
+      transition:transform .18s ease, border-color .35s, box-shadow .35s; will-change:transform; }
+    .featured{ background:radial-gradient(700px 400px at 100% 0%, rgba(157,123,255,.10), transparent 60%), rgba(8,10,18,.66);
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+    .feat-arch{ background:rgba(3,4,9,.86); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+    /* cursor-following spotlight */
+    .stat::after,.skill-card::after,.work-card::after,.repo-card::after{
+      content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .35s; z-index:0;
+      background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%), rgba(var(--rgb),.18), transparent 55%); }
+    .stat:hover::after,.skill-card:hover::after,.work-card:hover::after,.repo-card:hover::after{ opacity:1; }
+    .stat>*,.skill-card>*,.work-card>*,.repo-card>*{ position:relative; z-index:1; }
+    .skill-card:hover,.work-card:hover,.repo-card:hover,.stat:hover{
+      border-color:rgba(var(--rgb),.55);
+      box-shadow:0 22px 60px rgba(0,0,0,.55), 0 0 34px rgba(var(--rgb),.10); background:rgba(10,13,22,.7); }
+    @media (pointer:coarse){ .stat,.skill-card,.work-card,.repo-card{ transform:none !important; } }
   </style>
 </head>
 <body>
@@ -473,7 +493,7 @@ moon  rama     nataraja
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
   } }
   </script>
-  <script type="module" src="lab.js?v=19"></script>
+  <script type="module" src="lab.js?v=20"></script>
 
   <!-- page behaviour: nav state, reveals, counters, year -->
   <script>
@@ -505,6 +525,22 @@ moon  rama     nataraja
       });
     }, { threshold:0.5 });
     counters.forEach(c => cio.observe(c));
+
+    // 3D tilt + cursor spotlight on cards
+    const tiltCards = document.querySelectorAll(".stat,.skill-card,.work-card,.repo-card");
+    const coarse = matchMedia("(pointer:coarse)").matches;
+    if (!coarse) tiltCards.forEach(card => {
+      card.addEventListener("pointermove", e => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        card.style.setProperty("--mx", (px*100)+"%");
+        card.style.setProperty("--my", (py*100)+"%");
+        card.style.transform =
+          `perspective(820px) rotateY(${(px-0.5)*9}deg) rotateX(${-(py-0.5)*9}deg) translateY(-6px)`;
+      });
+      card.addEventListener("pointerleave", () => { card.style.transform = ""; });
+    });
   </script>
 </body>
 </html>

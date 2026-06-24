@@ -1,4 +1,4 @@
-/* ============ cloudx // lab v19 — glass crystal + scroll fade ============
+/* ============ cloudx // lab v20 — glass crystal + persistent backdrop ============
    v9 glass crystal hero. Crystal fades out on scroll (uFade) so the
    gold dust field shows through the whole translucent site; dust stays.
    Outer glass shell wraps an inner crystal; moving lights shimmer it. */
@@ -178,14 +178,15 @@ function animate(){
   gU.uTime.value=t;
   ptr.x+=(ptr.tx-ptr.x)*.04; ptr.y+=(ptr.ty-ptr.y)*.04;
 
-  /* crystal fades out as you scroll past the hero; dust field stays */
-  const fade = Math.max(0, Math.min(1, 1 - (scrollY / (innerHeight*0.75))));
+  /* crystal dims on scroll but never disappears — stays a faint backdrop */
+  const sf = Math.max(0, Math.min(1, 1 - (scrollY / (innerHeight*0.8))));
+  const fade = 0.22 + sf*0.78;
   gU.uFade.value = fade;
   inMat.opacity = fade;
   edgeWire.material.opacity = 0.65*fade;
   ringMesh.material.opacity = 0.4*fade;
-  /* drift the crystal gently down as it fades (parallax depth) */
-  group.position.y = 0.12 - (1-fade)*0.6;
+  /* gentle parallax drift (subtle, stays roughly centred) */
+  group.position.y = 0.12 - (1-sf)*0.25;
 
   group.rotation.y=(reduce?.3:t*.09)+dragX+ptr.x*.55;
   group.rotation.x=(reduce?.08:Math.sin(t*.16)*.1)+dragY+ptr.y*.38;
