@@ -1,8 +1,8 @@
-/* ============ cloudx // lab v14 — atom / nucleus ============
-   v9 glass crystal kept EXACTLY as the nucleus. Added three tilted
-   electron orbit rings, each with glowing electrons that travel along
-   their paths (atom model). Moving lights shimmer the glass.
-   Gold sprite particles + wire edges for depth. */
+/* ============ cloudx // lab v15 — refined crystal core ============
+   Refines v9/v14: smooth high-subdivision core (NO low-poly wireframe),
+   rounder glass shell with a soft contained rim, deep indigo→teal→violet
+   palette, and only two thin elegant rings with small crisp electrons.
+   Goal: restraint + smooth surfaces = elegant. */
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -24,171 +24,169 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.0;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.1, 100);
 camera.position.set(0, 0, 6.2);
 
-/* dynamic lights — orbit the glass so it shimmers as they move */
-scene.add(new THREE.AmbientLight(0x080820, 4));
-const lA = new THREE.PointLight(0xffffff, 7, 14);
-const lB = new THREE.PointLight(0x3355ff, 5, 12);
-const lC = new THREE.PointLight(0xaa33ff, 4, 12);
-const lD = new THREE.PointLight(0xffaa44, 3, 10);
-scene.add(lA, lB, lC, lD);
+/* soft lights — gentle, no harsh hotspots */
+scene.add(new THREE.AmbientLight(0x0a1030, 4));
+const lA = new THREE.PointLight(0x88aaff, 5, 16);
+const lB = new THREE.PointLight(0x33ddcc, 4, 14);
+const lC = new THREE.PointLight(0x9966ff, 3.5, 14);
+scene.add(lA, lB, lC);
 
-/* group */
 const group = new THREE.Group();
 group.position.y = 0.12;
 scene.add(group);
 
-/* ── inner crystal — spins independently, visible through outer glass ── */
-const inGeo = new THREE.IcosahedronGeometry(0.7, 1);
-inGeo.toNonIndexed(); // gives true flat shading (visible facets)
-const inMat = new THREE.MeshStandardMaterial({
-  color: 0x1633ee, emissive: 0x0a1fbb, emissiveIntensity:2.0,
-  roughness:0.05, metalness:0.88, flatShading:true,
-});
-const inner = new THREE.Mesh(inGeo, inMat);
-inner.renderOrder = 0;
-group.add(inner);
-
-/* glowing edges on inner crystal */
-const edgeWire = new THREE.LineSegments(
-  new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.71, 1)),
-  new THREE.LineBasicMaterial({ color:0x7799ff, transparent:true, opacity:0.65, blending:THREE.AdditiveBlending })
-);
-edgeWire.renderOrder = 1;
-group.add(edgeWire);
-
-/* ── outer glass shell — custom shader ── */
-const gU = { uTime:{ value:0 } };
-const gV = `
-varying vec3 vN; varying vec3 vV; varying vec3 vW;
-void main(){
-  vec4 wp = modelMatrix * vec4(position,1.0);
-  vW = wp.xyz;
-  vN = normalize(normalMatrix * normal);
-  vV = normalize(-(viewMatrix * wp).xyz);
-  gl_Position = projectionMatrix * viewMatrix * wp;
-}`;
-const gF = `
-precision highp float;
-uniform float uTime;
-varying vec3 vN; varying vec3 vV; varying vec3 vW;
-void main(){
-  float ndv = max(dot(vN,vV),0.0);
-  float rim = 1.0 - ndv;
-  float fres = pow(rim, 1.6);
-
-  /* iridescent surface — color shifts with view angle */
-  float t = ndv*5.0 + uTime*0.2;
-  vec3 irid = vec3(
-    0.55+0.45*sin(t*2.0),
-    0.55+0.45*sin(t*2.0+2.09),
-    0.55+0.45*sin(t*2.0+4.19)
-  );
-
-  /* interior tint — deep space blue that shows through center */
-  vec3 refTint = vec3(0.08, 0.16, 0.52);
-
-  vec3 col = mix(refTint, irid*1.15, fres*0.75);
-
-  /* hot rim for bloom */
-  col += vec3(0.55, 0.72, 1.0) * pow(rim, 4.0) * 2.8;
-  /* secondary warm highlight */
-  col += vec3(0.8, 0.55, 1.0) * pow(rim, 8.0) * 1.8;
-
-  /* center nearly invisible (see inner crystal), rim opaque */
-  float alpha = 0.06 + fres*0.82;
-  gl_FragColor = vec4(col, alpha);
-}`;
-const glassMesh = new THREE.Mesh(
-  new THREE.IcosahedronGeometry(1.2, 2),
+/* ── inner core — smooth, flowing, deep palette (NO wireframe) ── */
+const cU = { uTime:{ value:0 } };
+const core = new THREE.Mesh(
+  new THREE.IcosahedronGeometry(0.72, 24),  // high subdivision = smooth sphere
   new THREE.ShaderMaterial({
-    uniforms:gU, vertexShader:gV, fragmentShader:gF,
-    transparent:true, depthWrite:false, side:THREE.FrontSide,
+    uniforms: cU,
+    vertexShader:`
+      uniform float uTime;
+      varying vec3 vN; varying vec3 vV; varying float vF;
+      /* gentle flowing surface displacement */
+      float flow(vec3 p,float t){
+        return sin(p.x*3.0+t)*0.5 + sin(p.y*2.6-t*.8)*0.4
+             + sin(p.z*3.4+t*1.1)*0.3 + sin((p.x+p.y)*2.2-t*.6)*0.25;
+      }
+      void main(){
+        vec3 n=normalize(position);
+        float f=flow(n*1.6,uTime);
+        vF=f;
+        vec3 p=position+normal*f*0.05;
+        vec4 mv=modelViewMatrix*vec4(p,1.0);
+        vN=normalize(normalMatrix*normal);
+        vV=normalize(-mv.xyz);
+        gl_Position=projectionMatrix*mv;
+      }`,
+    fragmentShader:`
+      precision highp float;
+      uniform float uTime;
+      varying vec3 vN; varying vec3 vV; varying float vF;
+      vec3 pal(float t){
+        vec3 indigo=vec3(0.10,0.16,0.62);
+        vec3 teal  =vec3(0.10,0.62,0.66);
+        vec3 violet=vec3(0.42,0.22,0.78);
+        vec3 c=mix(indigo,teal, 0.5+0.5*sin(t));
+        c=mix(c,violet, 0.5+0.5*sin(t*0.7+1.6));
+        return c;
+      }
+      void main(){
+        float ndv=max(dot(vN,vV),0.0);
+        float rim=1.0-ndv;
+        vec3 col=pal(vF*1.2+uTime*0.4);
+        col*=0.45+0.55*ndv;                       // smooth shading, lit center
+        col+=vec3(0.3,0.7,0.9)*pow(rim,3.0)*0.7;  // soft cool rim
+        gl_FragColor=vec4(col,1.0);
+      }`,
   })
 );
-glassMesh.renderOrder = 2;
-group.add(glassMesh);
+core.renderOrder = 0;
+group.add(core);
 
-/* ── electron orbits — three tilted rings, each with travelling electrons ──
-   Each orbit is a pivot group carrying a tilt; the ring sits in the pivot's
-   XY plane, and electrons animate along (R cos a, R sin a, 0) so they ride
-   the ring exactly. Glow sprite gives each electron a soft halo. */
+/* ── outer glass shell — rounder + softer rim (no blowout) ── */
+const gU = { uTime:{ value:0 } };
+const glass = new THREE.Mesh(
+  new THREE.IcosahedronGeometry(1.18, 6),       // detail 6 = round silhouette
+  new THREE.ShaderMaterial({
+    uniforms: gU,
+    vertexShader:`
+      varying vec3 vN; varying vec3 vV;
+      void main(){
+        vec4 wp=modelMatrix*vec4(position,1.0);
+        vN=normalize(normalMatrix*normal);
+        vV=normalize(-(viewMatrix*wp).xyz);
+        gl_Position=projectionMatrix*viewMatrix*wp;
+      }`,
+    fragmentShader:`
+      precision highp float;
+      uniform float uTime;
+      varying vec3 vN; varying vec3 vV;
+      void main(){
+        float ndv=max(dot(vN,vV),0.0);
+        float rim=1.0-ndv;
+        float fres=pow(rim,1.8);
+        /* subtle desaturated iridescence */
+        float t=ndv*4.0+uTime*0.18;
+        vec3 irid=(vec3(
+          .5+.5*sin(t*2.0),
+          .5+.5*sin(t*2.0+2.094),
+          .5+.5*sin(t*2.0+4.189)
+        )*.55+.45);
+        vec3 col=mix(vec3(.05,.12,.34), irid, fres*0.5);
+        /* contained rim — tight falloff, modest intensity (no white blob) */
+        col+=vec3(.4,.66,.95)*pow(rim,5.5)*1.3;
+        col+=vec3(.55,.4,.9)*pow(rim,9.0)*0.9;
+        gl_FragColor=vec4(col, 0.04+fres*0.66);
+      }`,
+    transparent:true, depthWrite:false,
+  })
+);
+glass.renderOrder = 2;
+group.add(glass);
 
-/* soft round glow sprite for electrons */
-const elC = document.createElement("canvas"); elC.width = elC.height = 64;
-const elX = elC.getContext("2d");
-const elG = elX.createRadialGradient(32,32,0,32,32,32);
-elG.addColorStop(0,"rgba(200,235,255,1)");
-elG.addColorStop(0.35,"rgba(110,180,255,0.85)");
+/* ── two thin elegant rings with small crisp electrons ── */
+const elC=document.createElement("canvas"); elC.width=elC.height=64;
+const elX=elC.getContext("2d");
+const elG=elX.createRadialGradient(32,32,0,32,32,32);
+elG.addColorStop(0,"rgba(220,245,255,1)");
+elG.addColorStop(0.4,"rgba(120,190,255,0.7)");
 elG.addColorStop(1,"rgba(40,90,255,0)");
 elX.fillStyle=elG; elX.fillRect(0,0,64,64);
-const elTex = new THREE.CanvasTexture(elC);
+const elTex=new THREE.CanvasTexture(elC);
 
 const orbitDefs = [
-  { R:1.62, rx:Math.PI*0.42, ry:0.0,            ring:0x3366ff, ringO:0.32, dot:0x99ccff, n:2, spd:0.62 },
-  { R:1.78, rx:Math.PI*0.10, ry:Math.PI*0.55,   ring:0x6644ff, ringO:0.24, dot:0xc4a8ff, n:1, spd:-0.46 },
-  { R:1.95, rx:Math.PI*0.62, ry:Math.PI*0.22,   ring:0x2299ff, ringO:0.18, dot:0x9fe6ff, n:2, spd:0.34 },
+  { R:1.55, rx:Math.PI*0.40, ry:0.0,          ring:0x3a7bff, ringO:0.30, dot:0xbfe4ff, spd:0.55 },
+  { R:1.78, rx:Math.PI*0.16, ry:Math.PI*0.5,  ring:0x6a55ff, ringO:0.20, dot:0xd0c0ff, spd:-0.4 },
 ];
-
-const electrons = [];
-orbitDefs.forEach((o, oi) => {
-  const pivot = new THREE.Group();
-  pivot.rotation.set(o.rx, o.ry, 0);
+const electrons=[];
+orbitDefs.forEach((o,oi)=>{
+  const pivot=new THREE.Group();
+  pivot.rotation.set(o.rx,o.ry,0);
   group.add(pivot);
-
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(o.R, 0.005, 8, 160),
+  const ring=new THREE.Mesh(
+    new THREE.TorusGeometry(o.R,0.004,8,180),
     new THREE.MeshBasicMaterial({ color:o.ring, transparent:true, opacity:o.ringO, blending:THREE.AdditiveBlending })
   );
-  ring.renderOrder = 3;
-  pivot.add(ring);
-
-  for (let k=0; k<o.n; k++){
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map:elTex, color:o.dot, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
-    }));
-    sprite.scale.setScalar(0.34);
-    sprite.renderOrder = 5;
-    pivot.add(sprite);
-    electrons.push({ sprite, R:o.R, spd:o.spd, phase:(k/o.n)*Math.PI*2 + oi });
-  }
+  ring.renderOrder=3; pivot.add(ring);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:elTex, color:o.dot, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+  }));
+  sprite.scale.setScalar(0.16);   // small + crisp (was 0.34 fuzzy)
+  sprite.renderOrder=5; pivot.add(sprite);
+  electrons.push({ sprite, R:o.R, spd:o.spd, phase:oi*2.1 });
 });
 
-/* ── gold sprite particles ── */
-const spC = document.createElement("canvas"); spC.width = spC.height = 32;
-const spX = spC.getContext("2d");
-const spG = spX.createRadialGradient(16,16,0,16,16,16);
-spG.addColorStop(0,"rgba(255,215,90,1)");
-spG.addColorStop(0.4,"rgba(255,150,35,0.7)");
-spG.addColorStop(1,"rgba(255,80,0,0)");
-spX.fillStyle=spG; spX.fillRect(0,0,32,32);
-const spTex = new THREE.CanvasTexture(spC);
-
-const PN=650, ppBuf=new Float32Array(PN*3);
+/* ── fine stardust (subtle, cool) + a few warm gold accents ── */
+const PN=600, ppB=new Float32Array(PN*3), ppC=new Float32Array(PN*3);
 for(let i=0;i<PN;i++){
   const r=3.0+Math.random()*9, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
-  ppBuf[i*3]=r*Math.sin(ph)*Math.cos(th);
-  ppBuf[i*3+1]=r*Math.sin(ph)*Math.sin(th);
-  ppBuf[i*3+2]=r*Math.cos(ph);
+  ppB[i*3]=r*Math.sin(ph)*Math.cos(th);
+  ppB[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+  ppB[i*3+2]=r*Math.cos(ph);
+  if(i<PN*0.18){ ppC[i*3]=1.0; ppC[i*3+1]=0.78; ppC[i*3+2]=0.4; }       // gold accent
+  else { ppC[i*3]=0.55; ppC[i*3+1]=0.7; ppC[i*3+2]=1.0; }                // cool dust
 }
-const ppGeo=new THREE.BufferGeometry();
-ppGeo.setAttribute("position",new THREE.BufferAttribute(ppBuf,3));
-const particles=new THREE.Points(ppGeo, new THREE.PointsMaterial({
-  size:0.09, map:spTex, transparent:true, opacity:0.8,
-  depthWrite:false, blending:THREE.AdditiveBlending, sizeAttenuation:true,
+const ppG=new THREE.BufferGeometry();
+ppG.setAttribute("position",new THREE.BufferAttribute(ppB,3));
+ppG.setAttribute("color",new THREE.BufferAttribute(ppC,3));
+const particles=new THREE.Points(ppG,new THREE.PointsMaterial({
+  size:0.022, vertexColors:true, transparent:true, opacity:0.55,
+  depthWrite:false, blending:THREE.AdditiveBlending,
 }));
 scene.add(particles);
 
-/* bloom — restrained; catches inner emissive edges and glass rim only */
+/* bloom — gentle, contained */
 const composer=new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.5, 0.28, 0.86);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),0.42,0.3,0.85);
 composer.addPass(bloom);
 
 /* interaction */
@@ -210,33 +208,26 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const clock=new THREE.Clock();
 function animate(){
   const t=clock.getElapsedTime();
-  gU.uTime.value=t;
+  cU.uTime.value=t; gU.uTime.value=t;
   ptr.x+=(ptr.tx-ptr.x)*.04; ptr.y+=(ptr.ty-ptr.y)*.04;
 
-  group.rotation.y=(reduce?.3:t*.09)+dragX+ptr.x*.55;
-  group.rotation.x=(reduce?.08:Math.sin(t*.16)*.1)+dragY+ptr.y*.38;
+  group.rotation.y=(reduce?.3:t*.06)+dragX+ptr.x*.5;
+  group.rotation.x=(reduce?.08:Math.sin(t*.13)*.08)+dragY+ptr.y*.34;
 
-  /* inner crystal spins on its own axes — looks alive through glass */
-  inner.rotation.y=t*.25;
-  inner.rotation.x=t*.16;
-  edgeWire.rotation.copy(inner.rotation);
+  core.rotation.y=t*.16;
+  core.rotation.x=t*.1;
 
-  /* lights orbit → glass shimmers as highlights move */
-  lA.position.set(Math.sin(t*.38)*4.5, Math.cos(t*.28)*3.5+2, 2.5);
-  lB.position.set(Math.sin(t*.46+2)*3.5, Math.cos(t*.32+1)*2.5, -2);
-  lC.position.set(Math.sin(t*.28+4)*3.5, -2, Math.cos(t*.4+2)*4);
-  lD.position.set(-3.5, Math.sin(t*.22)*2.5, Math.cos(t*.34)*3);
+  lA.position.set(Math.sin(t*.34)*4.5, Math.cos(t*.26)*3.5+1.5, 2.5);
+  lB.position.set(Math.sin(t*.44+2)*3.5, Math.cos(t*.30+1)*2.5, -2);
+  lC.position.set(Math.sin(t*.26+4)*3.5, -2, Math.cos(t*.38+2)*4);
 
-  /* electrons travel along their tilted orbit rings */
   electrons.forEach(e=>{
-    const a = t*e.spd + e.phase;
+    const a=t*e.spd+e.phase;
     e.sprite.position.set(e.R*Math.cos(a), e.R*Math.sin(a), 0);
-    const pulse = 0.30 + 0.10*Math.sin(t*3.0 + e.phase);
-    e.sprite.scale.setScalar(pulse);
   });
 
-  particles.rotation.y=t*.013;
-  particles.rotation.x=t*.006;
+  particles.rotation.y=t*.01;
+  particles.rotation.x=t*.005;
 
   camera.position.x+=(ptr.x*.6-camera.position.x)*.04;
   camera.position.y+=(-ptr.y*.42-camera.position.y)*.04;
