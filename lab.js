@@ -1,7 +1,7 @@
-/* ============ cloudx // lab v9 — glass crystal ============
-   Outer glass shell (transparent, iridescent rim) wraps an inner
-   crystal that spins independently. Moving lights shimmer the glass.
-   Gold sprite particles + wire edges for depth. */
+/* ============ cloudx // lab v19 — glass crystal + scroll fade ============
+   v9 glass crystal hero. Crystal fades out on scroll (uFade) so the
+   gold dust field shows through the whole translucent site; dust stays.
+   Outer glass shell wraps an inner crystal; moving lights shimmer it. */
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -49,6 +49,7 @@ inGeo.toNonIndexed(); // gives true flat shading (visible facets)
 const inMat = new THREE.MeshStandardMaterial({
   color: 0x1633ee, emissive: 0x0a1fbb, emissiveIntensity:2.0,
   roughness:0.05, metalness:0.88, flatShading:true,
+  transparent:true,  // allow scroll-fade
 });
 const inner = new THREE.Mesh(inGeo, inMat);
 inner.renderOrder = 0;
@@ -63,7 +64,7 @@ edgeWire.renderOrder = 1;
 group.add(edgeWire);
 
 /* ── outer glass shell — custom shader ── */
-const gU = { uTime:{ value:0 } };
+const gU = { uTime:{ value:0 }, uFade:{ value:1 } };
 const gV = `
 varying vec3 vN; varying vec3 vV; varying vec3 vW;
 void main(){
@@ -76,6 +77,7 @@ void main(){
 const gF = `
 precision highp float;
 uniform float uTime;
+uniform float uFade;
 varying vec3 vN; varying vec3 vV; varying vec3 vW;
 void main(){
   float ndv = max(dot(vN,vV),0.0);
@@ -101,7 +103,7 @@ void main(){
   col += vec3(0.8, 0.55, 1.0) * pow(rim, 8.0) * 1.8;
 
   /* center nearly invisible (see inner crystal), rim opaque */
-  float alpha = 0.06 + fres*0.82;
+  float alpha = (0.06 + fres*0.82) * uFade;
   gl_FragColor = vec4(col, alpha);
 }`;
 const glassMesh = new THREE.Mesh(
@@ -175,6 +177,15 @@ function animate(){
   const t=clock.getElapsedTime();
   gU.uTime.value=t;
   ptr.x+=(ptr.tx-ptr.x)*.04; ptr.y+=(ptr.ty-ptr.y)*.04;
+
+  /* crystal fades out as you scroll past the hero; dust field stays */
+  const fade = Math.max(0, Math.min(1, 1 - (scrollY / (innerHeight*0.75))));
+  gU.uFade.value = fade;
+  inMat.opacity = fade;
+  edgeWire.material.opacity = 0.65*fade;
+  ringMesh.material.opacity = 0.4*fade;
+  /* drift the crystal gently down as it fades (parallax depth) */
+  group.position.y = 0.12 - (1-fade)*0.6;
 
   group.rotation.y=(reduce?.3:t*.09)+dragX+ptr.x*.55;
   group.rotation.x=(reduce?.08:Math.sin(t*.16)*.1)+dragY+ptr.y*.38;
