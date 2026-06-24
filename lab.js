@@ -1,8 +1,8 @@
-/* ============ cloudx // lab v10 — iridescent torus knot ============
-   A torus knot (mathematically knotted tube) with iridescent GLSL:
-   near-black surface, rainbow sheen at grazing angles, warm gold
-   pulse flowing along the tube. Moving lights make it shimmer.
-   Gold sprite particles + three orbital halos. */
+/* ============ cloudx // lab v11 — obsidian cut gem ============
+   An 8-sided diamond/crystal (LatheGeometry) with dark obsidian metallic
+   material. Three orbiting lights create sharp specular highlights that
+   jump facet-to-facet as the gem slowly rotates. Fine stardust particles.
+   Dark = elegant. Precision = premium. */
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -24,126 +24,90 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 100);
-camera.position.set(0, 0, 6.5);
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 60);
+camera.position.set(0, 0, 6.2);
 
-/* orbiting lights — create caustic shimmer on the knot */
-scene.add(new THREE.AmbientLight(0x04041a, 6));
-const lA = new THREE.PointLight(0xffffff, 9, 18);
-const lB = new THREE.PointLight(0x3366ff, 6, 14);
-const lC = new THREE.PointLight(0xcc33ff, 5, 14);
-const lD = new THREE.PointLight(0xffaa44, 4, 12);
-scene.add(lA, lB, lC, lD);
+/* three orbiting lights — each creates a sharp specular on the dark gem */
+scene.add(new THREE.AmbientLight(0x03030f, 6));
+const lKey  = new THREE.PointLight(0xffffff, 14, 18);  // white key
+const lBlue = new THREE.PointLight(0x4466ff,  8, 14);  // cool fill
+const lGold = new THREE.PointLight(0xffbb44,  7, 14);  // warm accent
+scene.add(lKey, lBlue, lGold);
 
 const group = new THREE.Group();
 scene.add(group);
 
-/* ── iridescent torus knot — the hero ── */
-const uTime = { value: 0 };
+/* ── 8-sided cut gem ── */
+/* LatheGeometry revolves a 2D profile around Y to create a faceted form.
+   8 segments = octagonal cut (like a real diamond). flatShading = each
+   face has a single normal → highlight snaps sharply across each facet. */
+const profile = [
+  new THREE.Vector2(0.00,  1.30),  // top apex
+  new THREE.Vector2(0.42,  0.92),  // upper crown
+  new THREE.Vector2(0.78,  0.54),  // crown shoulder
+  new THREE.Vector2(0.92,  0.12),  // girdle top
+  new THREE.Vector2(0.92, -0.12),  // girdle bottom (flat band = visible ring)
+  new THREE.Vector2(0.65, -0.55),  // upper pavilion
+  new THREE.Vector2(0.30, -0.86),  // lower pavilion
+  new THREE.Vector2(0.00, -1.20),  // bottom apex
+];
+const gemGeo = new THREE.LatheGeometry(profile, 8);
+const gemMat = new THREE.MeshStandardMaterial({
+  color:    new THREE.Color(0.022, 0.022, 0.085),  // deep indigo-black
+  metalness: 0.94,
+  roughness: 0.04,   // mirror-smooth → razor-sharp specular
+  flatShading: true, // visible facets
+});
+const gem = new THREE.Mesh(gemGeo, gemMat);
+group.add(gem);
 
-const vert = `
-varying vec3 vN; varying vec3 vV; varying vec2 vUV;
-void main(){
-  vN = normalize(normalMatrix * normal);
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vV = normalize(-mv.xyz);
-  vUV = uv;
-  gl_Position = projectionMatrix * mv;
-}`;
-
-/* uv.x = 0..1 along the tube path, uv.y = around the cross-section */
-const frag = `
-precision highp float;
-uniform float uTime;
-varying vec3 vN; varying vec3 vV; varying vec2 vUV;
-
-vec3 rainbow(float t){
-  return vec3(
-    .5+.5*sin(t),
-    .5+.5*sin(t+2.094),
-    .5+.5*sin(t+4.189)
-  );
-}
-
-void main(){
-  float ndv = max(dot(vN,vV),0.0);
-  float rim = 1.0 - ndv;                    // 0 at face-on, 1 at edge
-
-  /* iridescence: color shifts with view angle AND tube position */
-  float iridPhase = ndv*6.0 + vUV.x*12.566 + uTime*.18;
-  vec3 irid = rainbow(iridPhase);
-
-  /* warm gold pulse traveling along tube */
-  float pulse = .5 + .5*sin(vUV.x*18.85 - uTime*1.1);   // 3 bands travel forward
-  vec3 gold = vec3(1.0,.72,.22) * pulse;
-
-  /* build up surface:
-     - near-black base (see the form in shadow)
-     - iridescent sheen at flanks
-     - gold pulse on lit flanks
-     - hot white-cyan rim → bloom catches this */
-  vec3 col = irid * .05;                               // almost-black base
-  col += irid * pow(rim, 1.3) * 1.4;                  // iridescent flank
-  col += gold  * pow(rim, 2.2) * 1.0;                 // gold pulse
-  col += vec3(.55,.8,1.0) * pow(rim,4.5) * 3.2;       // hot rim (bloom bait)
-  col += vec3(.9,.5,1.0)  * pow(rim,7.0) * 1.5;       // violet ultra-rim
-
-  gl_FragColor = vec4(col, 1.0);
-}`;
-
-const knot = new THREE.Mesh(
-  new THREE.TorusKnotGeometry(0.95, 0.29, 320, 22, 2, 3),
-  new THREE.ShaderMaterial({ uniforms:{ uTime }, vertexShader:vert, fragmentShader:frag })
+/* edge lines — reinforce the facet silhouette */
+const gemEdges = new THREE.LineSegments(
+  new THREE.EdgesGeometry(gemGeo),
+  new THREE.LineBasicMaterial({ color:0x2233aa, transparent:true, opacity:0.3, blending:THREE.AdditiveBlending })
 );
-group.add(knot);
+group.add(gemEdges);
 
-/* three halos at different angles — depth & scale reference */
-const haloColors = [0x2244ff, 0x9922ff, 0xffaa33];
-const haloOpacity = [0.38, 0.22, 0.18];
-const haloRx = [Math.PI*.32, Math.PI*.08, Math.PI*.55];
-const haloRy = [0, Math.PI*.38, Math.PI*.18];
-for(let i=0;i<3;i++){
-  const h = new THREE.Mesh(
-    new THREE.TorusGeometry(1.5+i*.2, 0.005, 8, 128),
-    new THREE.MeshBasicMaterial({ color:haloColors[i], transparent:true, opacity:haloOpacity[i], blending:THREE.AdditiveBlending })
-  );
-  h.rotation.x = haloRx[i]; h.rotation.y = haloRy[i];
-  group.add(h);
-}
-
-/* gold sprite particles */
-const spC=document.createElement("canvas"); spC.width=spC.height=32;
-const spX=spC.getContext("2d");
-const spG=spX.createRadialGradient(16,16,0,16,16,16);
-spG.addColorStop(0,"rgba(255,220,80,1)");
-spG.addColorStop(.38,"rgba(255,145,30,0.75)");
-spG.addColorStop(1,"rgba(255,70,0,0)");
-spX.fillStyle=spG; spX.fillRect(0,0,32,32);
-const spTex=new THREE.CanvasTexture(spC);
-
-const PN=750, ppB=new Float32Array(PN*3);
+/* ── fine stardust cloud ── */
+const PN = 2400, pBuf = new Float32Array(PN*3);
 for(let i=0;i<PN;i++){
-  const r=3.2+Math.random()*9.5, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
-  ppB[i*3]=r*Math.sin(ph)*Math.cos(th);
-  ppB[i*3+1]=r*Math.sin(ph)*Math.sin(th);
-  ppB[i*3+2]=r*Math.cos(ph);
+  const r=2.8+Math.random()*10, t=Math.random()*Math.PI*2, p=Math.acos(2*Math.random()-1);
+  pBuf[i*3]=r*Math.sin(p)*Math.cos(t);
+  pBuf[i*3+1]=r*Math.sin(p)*Math.sin(t);
+  pBuf[i*3+2]=r*Math.cos(p);
 }
-const ppG=new THREE.BufferGeometry();
-ppG.setAttribute("position",new THREE.BufferAttribute(ppB,3));
-const particles=new THREE.Points(ppG,new THREE.PointsMaterial({
-  size:.095, map:spTex, transparent:true, opacity:.78,
-  depthWrite:false, blending:THREE.AdditiveBlending, sizeAttenuation:true,
+const pGeo=new THREE.BufferGeometry();
+pGeo.setAttribute("position",new THREE.BufferAttribute(pBuf,3));
+const particles=new THREE.Points(pGeo,new THREE.PointsMaterial({
+  size:0.016, color:0x6677bb, transparent:true, opacity:0.5,
+  depthWrite:false, blending:THREE.AdditiveBlending,
 }));
 scene.add(particles);
 
-/* bloom — catches the hot rim and gold pulse peaks */
+/* a handful of brighter close-in stars for sparkle */
+const spN = 180, spBuf = new Float32Array(spN*3);
+for(let i=0;i<spN;i++){
+  const r=1.8+Math.random()*2.8, t=Math.random()*Math.PI*2, p=Math.acos(2*Math.random()-1);
+  spBuf[i*3]=r*Math.sin(p)*Math.cos(t);
+  spBuf[i*3+1]=r*Math.sin(p)*Math.sin(t);
+  spBuf[i*3+2]=r*Math.cos(p);
+}
+const spGeo=new THREE.BufferGeometry();
+spGeo.setAttribute("position",new THREE.BufferAttribute(spBuf,3));
+const sparkles=new THREE.Points(spGeo,new THREE.PointsMaterial({
+  size:0.038, color:0xaabbee, transparent:true, opacity:0.6,
+  depthWrite:false, blending:THREE.AdditiveBlending,
+}));
+scene.add(sparkles);
+
+/* bloom — only touches the absolute brightest specular peaks */
 const composer=new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.55, 0.32, 0.82);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.5, 0.28, 0.88);
 composer.addPass(bloom);
 
 /* interaction */
@@ -165,25 +129,24 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const clock=new THREE.Clock();
 function animate(){
   const t=clock.getElapsedTime();
-  uTime.value=t;
   ptr.x+=(ptr.tx-ptr.x)*.04; ptr.y+=(ptr.ty-ptr.y)*.04;
 
-  /* slow majestic rotation — like Active Theory objects */
-  group.rotation.y=(reduce?.4:t*.075)+dragX+ptr.x*.55;
-  group.rotation.x=(reduce?.1:Math.sin(t*.13)*.13)+dragY+ptr.y*.38;
-  group.rotation.z=reduce?0:t*.025;   // slow roll adds depth
+  /* slow, majestic rotation — highlights step from face to face */
+  group.rotation.y=(reduce?.3:t*.072)+dragX+ptr.x*.5;
+  group.rotation.x=(reduce?.05:Math.sin(t*.11)*.07)+dragY+ptr.y*.35;
 
-  /* lights orbit → highlights travel across the iridescent surface */
-  lA.position.set(Math.sin(t*.36)*5.5, Math.cos(t*.26)*4+1.5, 3);
-  lB.position.set(Math.sin(t*.44+2)*4, Math.cos(t*.31+1)*3, -2.5);
-  lC.position.set(Math.sin(t*.26+4)*4.5, -2.5, Math.cos(t*.4+2)*5);
-  lD.position.set(-4.5, Math.sin(t*.21)*3, Math.cos(t*.32)*3.5);
+  /* lights orbit the gem on different paths */
+  lKey.position.set( Math.sin(t*.30)*5.5,  Math.cos(t*.22)*4.5+1, 3);
+  lBlue.position.set(Math.sin(t*.40+2)*5, Math.cos(t*.28+1)*4,  -2.5);
+  lGold.position.set(Math.sin(t*.21+4)*5, -3.5, Math.cos(t*.34+2)*5);
 
-  particles.rotation.y=t*.011;
-  particles.rotation.x=t*.005;
+  particles.rotation.y=t*.009;
+  particles.rotation.x=t*.004;
+  sparkles.rotation.y=t*.013;
+  sparkles.rotation.z=t*.007;
 
-  camera.position.x+=(ptr.x*.75-camera.position.x)*.04;
-  camera.position.y+=(-ptr.y*.5-camera.position.y)*.04;
+  camera.position.x+=(ptr.x*.7-camera.position.x)*.04;
+  camera.position.y+=(-ptr.y*.45-camera.position.y)*.04;
   camera.lookAt(0,0,0);
   composer.render();
   requestAnimationFrame(animate);
