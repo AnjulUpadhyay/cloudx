@@ -1,7 +1,8 @@
-/* ============ cloudx // lab v9 — glass crystal ============
-   Outer glass shell (transparent, iridescent rim) wraps an inner
-   crystal that spins independently. Moving lights shimmer the glass.
-   Gold sprite particles + wire edges for depth. */
+/* ============ cloudx // lab v17 — wireframe network globe ============
+   A sphere of evenly-distributed nodes (fibonacci) connected by thin
+   lines into a network mesh. Glowing nodes, dim edges, and small data
+   packets that travel along connections (cloud / DevOps network motif).
+   Dark, one accent (cyan), slow rotation. Restraint = elegant. */
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -30,128 +31,119 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.1, 100);
 camera.position.set(0, 0, 6.2);
 
-/* dynamic lights — orbit the glass so it shimmers as they move */
-scene.add(new THREE.AmbientLight(0x080820, 4));
-const lA = new THREE.PointLight(0xffffff, 7, 14);
-const lB = new THREE.PointLight(0x3355ff, 5, 12);
-const lC = new THREE.PointLight(0xaa33ff, 4, 12);
-const lD = new THREE.PointLight(0xffaa44, 3, 10);
-scene.add(lA, lB, lC, lD);
-
-/* group */
 const group = new THREE.Group();
 group.position.y = 0.12;
 scene.add(group);
 
-/* ── inner crystal — spins independently, visible through outer glass ── */
-const inGeo = new THREE.IcosahedronGeometry(0.7, 1);
-inGeo.toNonIndexed(); // gives true flat shading (visible facets)
-const inMat = new THREE.MeshStandardMaterial({
-  color: 0x1633ee, emissive: 0x0a1fbb, emissiveIntensity:2.0,
-  roughness:0.05, metalness:0.88, flatShading:true,
-});
-const inner = new THREE.Mesh(inGeo, inMat);
-inner.renderOrder = 0;
-group.add(inner);
+const ACCENT = new THREE.Color(0x55c8ff);
+const ACCENT2 = new THREE.Color(0x7c5cff);
 
-/* glowing edges on inner crystal */
-const edgeWire = new THREE.LineSegments(
-  new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.71, 1)),
-  new THREE.LineBasicMaterial({ color:0x7799ff, transparent:true, opacity:0.65, blending:THREE.AdditiveBlending })
-);
-edgeWire.renderOrder = 1;
-group.add(edgeWire);
-
-/* ── outer glass shell — custom shader ── */
-const gU = { uTime:{ value:0 } };
-const gV = `
-varying vec3 vN; varying vec3 vV; varying vec3 vW;
-void main(){
-  vec4 wp = modelMatrix * vec4(position,1.0);
-  vW = wp.xyz;
-  vN = normalize(normalMatrix * normal);
-  vV = normalize(-(viewMatrix * wp).xyz);
-  gl_Position = projectionMatrix * viewMatrix * wp;
-}`;
-const gF = `
-precision highp float;
-uniform float uTime;
-varying vec3 vN; varying vec3 vV; varying vec3 vW;
-void main(){
-  float ndv = max(dot(vN,vV),0.0);
-  float rim = 1.0 - ndv;
-  float fres = pow(rim, 1.6);
-
-  /* iridescent surface — color shifts with view angle */
-  float t = ndv*5.0 + uTime*0.2;
-  vec3 irid = vec3(
-    0.55+0.45*sin(t*2.0),
-    0.55+0.45*sin(t*2.0+2.09),
-    0.55+0.45*sin(t*2.0+4.19)
-  );
-
-  /* interior tint — deep space blue that shows through center */
-  vec3 refTint = vec3(0.08, 0.16, 0.52);
-
-  vec3 col = mix(refTint, irid*1.15, fres*0.75);
-
-  /* hot rim for bloom */
-  col += vec3(0.55, 0.72, 1.0) * pow(rim, 4.0) * 2.8;
-  /* secondary warm highlight */
-  col += vec3(0.8, 0.55, 1.0) * pow(rim, 8.0) * 1.8;
-
-  /* center nearly invisible (see inner crystal), rim opaque */
-  float alpha = 0.06 + fres*0.82;
-  gl_FragColor = vec4(col, alpha);
-}`;
-const glassMesh = new THREE.Mesh(
-  new THREE.IcosahedronGeometry(1.2, 2),
-  new THREE.ShaderMaterial({
-    uniforms:gU, vertexShader:gV, fragmentShader:gF,
-    transparent:true, depthWrite:false, side:THREE.FrontSide,
-  })
-);
-glassMesh.renderOrder = 2;
-group.add(glassMesh);
-
-/* orbit ring */
-const ringMesh = new THREE.Mesh(
-  new THREE.TorusGeometry(1.65, 0.006, 8, 128),
-  new THREE.MeshBasicMaterial({ color:0x2244ee, transparent:true, opacity:0.4, blending:THREE.AdditiveBlending })
-);
-ringMesh.rotation.x = Math.PI * 0.38;
-ringMesh.renderOrder = 3;
-group.add(ringMesh);
-
-/* ── gold sprite particles ── */
-const spC = document.createElement("canvas"); spC.width = spC.height = 32;
-const spX = spC.getContext("2d");
-const spG = spX.createRadialGradient(16,16,0,16,16,16);
-spG.addColorStop(0,"rgba(255,215,90,1)");
-spG.addColorStop(0.4,"rgba(255,150,35,0.7)");
-spG.addColorStop(1,"rgba(255,80,0,0)");
-spX.fillStyle=spG; spX.fillRect(0,0,32,32);
-const spTex = new THREE.CanvasTexture(spC);
-
-const PN=650, ppBuf=new Float32Array(PN*3);
-for(let i=0;i<PN;i++){
-  const r=3.0+Math.random()*9, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
-  ppBuf[i*3]=r*Math.sin(ph)*Math.cos(th);
-  ppBuf[i*3+1]=r*Math.sin(ph)*Math.sin(th);
-  ppBuf[i*3+2]=r*Math.cos(ph);
+/* ── nodes: fibonacci sphere (even distribution) ── */
+const R = 1.7, NODES = 110;
+const nodes = [];
+const golden = Math.PI * (3 - Math.sqrt(5));
+for (let i=0;i<NODES;i++){
+  const y = 1 - (i/(NODES-1))*2;
+  const rad = Math.sqrt(1 - y*y);
+  const th = golden * i;
+  nodes.push(new THREE.Vector3(Math.cos(th)*rad*R, y*R, Math.sin(th)*rad*R));
 }
-const ppGeo=new THREE.BufferGeometry();
-ppGeo.setAttribute("position",new THREE.BufferAttribute(ppBuf,3));
-const particles=new THREE.Points(ppGeo, new THREE.PointsMaterial({
-  size:0.09, map:spTex, transparent:true, opacity:0.8,
-  depthWrite:false, blending:THREE.AdditiveBlending, sizeAttenuation:true,
-}));
-scene.add(particles);
 
-/* bloom — restrained; catches inner emissive edges and glass rim only */
+/* ── edges: connect each node to its nearest neighbours (deduped) ── */
+const K = 3;
+const edgeSet = new Set();
+const edges = [];
+for (let i=0;i<NODES;i++){
+  const d = [];
+  for (let j=0;j<NODES;j++) if(j!==i) d.push([nodes[i].distanceTo(nodes[j]), j]);
+  d.sort((a,b)=>a[0]-b[0]);
+  for (let k=0;k<K;k++){
+    const j = d[k][1];
+    const key = i<j ? i+"_"+j : j+"_"+i;
+    if(!edgeSet.has(key)){ edgeSet.add(key); edges.push([i,j]); }
+  }
+}
+
+/* line geometry for all edges */
+const edgePos = new Float32Array(edges.length*2*3);
+edges.forEach(([a,b],e)=>{
+  edgePos.set([nodes[a].x,nodes[a].y,nodes[a].z], e*6);
+  edgePos.set([nodes[b].x,nodes[b].y,nodes[b].z], e*6+3);
+});
+const edgeGeo = new THREE.BufferGeometry();
+edgeGeo.setAttribute("position", new THREE.BufferAttribute(edgePos,3));
+const lines = new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({
+  color: ACCENT, transparent:true, opacity:0.22, blending:THREE.AdditiveBlending, depthWrite:false,
+}));
+group.add(lines);
+
+/* ── glowing node sprites ── */
+const ndC=document.createElement("canvas"); ndC.width=ndC.height=64;
+const ndX=ndC.getContext("2d");
+const ndG=ndX.createRadialGradient(32,32,0,32,32,32);
+ndG.addColorStop(0,"rgba(220,245,255,1)");
+ndG.addColorStop(0.35,"rgba(90,200,255,0.8)");
+ndG.addColorStop(1,"rgba(40,120,255,0)");
+ndX.fillStyle=ndG; ndX.fillRect(0,0,64,64);
+const ndTex=new THREE.CanvasTexture(ndC);
+
+const nodeSprites = nodes.map((n,i)=>{
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:ndTex, color:ACCENT, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+  }));
+  s.position.copy(n);
+  s.scale.setScalar(0.11);
+  group.add(s);
+  return { s, phase: Math.random()*Math.PI*2 };
+});
+
+/* faint solid inner sphere — gives the wireframe a sense of volume */
+group.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R*0.98, 48, 48),
+  new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false, side:THREE.FrontSide,
+    vertexShader:`varying vec3 vN; varying vec3 vV;
+      void main(){ vN=normalize(normalMatrix*normal);
+        vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz);
+        gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`precision highp float; varying vec3 vN; varying vec3 vV;
+      void main(){ float rim=1.0-max(dot(vN,vV),0.0);
+        vec3 col=mix(vec3(0.02,0.05,0.16), vec3(0.12,0.4,0.7), pow(rim,2.0));
+        gl_FragColor=vec4(col, 0.10+pow(rim,3.0)*0.35); }`,
+  })
+));
+
+/* ── data packets travelling along random edges ── */
+const PKT=16;
+const packets = [];
+for(let i=0;i<PKT;i++){
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:ndTex, color:0xeaffff, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+  }));
+  sprite.scale.setScalar(0.09);
+  group.add(sprite);
+  packets.push({ sprite, e:Math.floor(Math.random()*edges.length), t:Math.random(), spd:0.25+Math.random()*0.4 });
+}
+
+/* ── distant stardust ── */
+const SN=500, sBuf=new Float32Array(SN*3);
+for(let i=0;i<SN;i++){
+  const r=5+Math.random()*9, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+  sBuf[i*3]=r*Math.sin(ph)*Math.cos(th);
+  sBuf[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+  sBuf[i*3+2]=r*Math.cos(ph);
+}
+const sGeo=new THREE.BufferGeometry();
+sGeo.setAttribute("position",new THREE.BufferAttribute(sBuf,3));
+const stars=new THREE.Points(sGeo,new THREE.PointsMaterial({
+  size:0.02, color:0x6688bb, transparent:true, opacity:0.5, depthWrite:false, blending:THREE.AdditiveBlending,
+}));
+scene.add(stars);
+
+/* bloom — gentle, lifts the nodes & packets */
 const composer=new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.5, 0.28, 0.86);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.55, 0.4, 0.62);
 composer.addPass(bloom);
 
 /* interaction */
@@ -168,30 +160,34 @@ addEventListener("resize",()=>{
   renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight);
 });
 
+/* tmp vectors for packet lerp */
+const va=new THREE.Vector3(), vb=new THREE.Vector3();
+
 /* animate */
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const clock=new THREE.Clock();
 function animate(){
   const t=clock.getElapsedTime();
-  gU.uTime.value=t;
   ptr.x+=(ptr.tx-ptr.x)*.04; ptr.y+=(ptr.ty-ptr.y)*.04;
 
-  group.rotation.y=(reduce?.3:t*.09)+dragX+ptr.x*.55;
-  group.rotation.x=(reduce?.08:Math.sin(t*.16)*.1)+dragY+ptr.y*.38;
+  group.rotation.y=(reduce?.3:t*.07)+dragX+ptr.x*.5;
+  group.rotation.x=(reduce?.06:Math.sin(t*.12)*.08)+dragY+ptr.y*.34;
 
-  /* inner crystal spins on its own axes — looks alive through glass */
-  inner.rotation.y=t*.25;
-  inner.rotation.x=t*.16;
-  edgeWire.rotation.copy(inner.rotation);
+  /* nodes gently twinkle */
+  nodeSprites.forEach(o=>{
+    o.s.scale.setScalar(0.10 + 0.03*Math.sin(t*1.6 + o.phase));
+  });
 
-  /* lights orbit → glass shimmers as highlights move */
-  lA.position.set(Math.sin(t*.38)*4.5, Math.cos(t*.28)*3.5+2, 2.5);
-  lB.position.set(Math.sin(t*.46+2)*3.5, Math.cos(t*.32+1)*2.5, -2);
-  lC.position.set(Math.sin(t*.28+4)*3.5, -2, Math.cos(t*.4+2)*4);
-  lD.position.set(-3.5, Math.sin(t*.22)*2.5, Math.cos(t*.34)*3);
+  /* packets glide along their edges, then jump to a new edge */
+  packets.forEach(p=>{
+    p.t += p.spd * (reduce?0:0.016);
+    if(p.t>=1){ p.t=0; p.e=Math.floor(Math.random()*edges.length); p.spd=0.25+Math.random()*0.4; }
+    const [a,b]=edges[p.e];
+    va.copy(nodes[a]); vb.copy(nodes[b]);
+    p.sprite.position.lerpVectors(va, vb, p.t);
+  });
 
-  particles.rotation.y=t*.013;
-  particles.rotation.x=t*.006;
+  stars.rotation.y=t*.008;
 
   camera.position.x+=(ptr.x*.6-camera.position.x)*.04;
   camera.position.y+=(-ptr.y*.42-camera.position.y)*.04;
