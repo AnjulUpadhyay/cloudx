@@ -1,6 +1,7 @@
-/* ============ cloudx // lab v9 — glass crystal ============
-   Outer glass shell (transparent, iridescent rim) wraps an inner
-   crystal that spins independently. Moving lights shimmer the glass.
+/* ============ cloudx // lab v14 — atom / nucleus ============
+   v9 glass crystal kept EXACTLY as the nucleus. Added three tilted
+   electron orbit rings, each with glowing electrons that travel along
+   their paths (atom model). Moving lights shimmer the glass.
    Gold sprite particles + wire edges for depth. */
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -114,14 +115,50 @@ const glassMesh = new THREE.Mesh(
 glassMesh.renderOrder = 2;
 group.add(glassMesh);
 
-/* orbit ring */
-const ringMesh = new THREE.Mesh(
-  new THREE.TorusGeometry(1.65, 0.006, 8, 128),
-  new THREE.MeshBasicMaterial({ color:0x2244ee, transparent:true, opacity:0.4, blending:THREE.AdditiveBlending })
-);
-ringMesh.rotation.x = Math.PI * 0.38;
-ringMesh.renderOrder = 3;
-group.add(ringMesh);
+/* ── electron orbits — three tilted rings, each with travelling electrons ──
+   Each orbit is a pivot group carrying a tilt; the ring sits in the pivot's
+   XY plane, and electrons animate along (R cos a, R sin a, 0) so they ride
+   the ring exactly. Glow sprite gives each electron a soft halo. */
+
+/* soft round glow sprite for electrons */
+const elC = document.createElement("canvas"); elC.width = elC.height = 64;
+const elX = elC.getContext("2d");
+const elG = elX.createRadialGradient(32,32,0,32,32,32);
+elG.addColorStop(0,"rgba(200,235,255,1)");
+elG.addColorStop(0.35,"rgba(110,180,255,0.85)");
+elG.addColorStop(1,"rgba(40,90,255,0)");
+elX.fillStyle=elG; elX.fillRect(0,0,64,64);
+const elTex = new THREE.CanvasTexture(elC);
+
+const orbitDefs = [
+  { R:1.62, rx:Math.PI*0.42, ry:0.0,            ring:0x3366ff, ringO:0.32, dot:0x99ccff, n:2, spd:0.62 },
+  { R:1.78, rx:Math.PI*0.10, ry:Math.PI*0.55,   ring:0x6644ff, ringO:0.24, dot:0xc4a8ff, n:1, spd:-0.46 },
+  { R:1.95, rx:Math.PI*0.62, ry:Math.PI*0.22,   ring:0x2299ff, ringO:0.18, dot:0x9fe6ff, n:2, spd:0.34 },
+];
+
+const electrons = [];
+orbitDefs.forEach((o, oi) => {
+  const pivot = new THREE.Group();
+  pivot.rotation.set(o.rx, o.ry, 0);
+  group.add(pivot);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(o.R, 0.005, 8, 160),
+    new THREE.MeshBasicMaterial({ color:o.ring, transparent:true, opacity:o.ringO, blending:THREE.AdditiveBlending })
+  );
+  ring.renderOrder = 3;
+  pivot.add(ring);
+
+  for (let k=0; k<o.n; k++){
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map:elTex, color:o.dot, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+    }));
+    sprite.scale.setScalar(0.34);
+    sprite.renderOrder = 5;
+    pivot.add(sprite);
+    electrons.push({ sprite, R:o.R, spd:o.spd, phase:(k/o.n)*Math.PI*2 + oi });
+  }
+});
 
 /* ── gold sprite particles ── */
 const spC = document.createElement("canvas"); spC.width = spC.height = 32;
@@ -189,6 +226,14 @@ function animate(){
   lB.position.set(Math.sin(t*.46+2)*3.5, Math.cos(t*.32+1)*2.5, -2);
   lC.position.set(Math.sin(t*.28+4)*3.5, -2, Math.cos(t*.4+2)*4);
   lD.position.set(-3.5, Math.sin(t*.22)*2.5, Math.cos(t*.34)*3);
+
+  /* electrons travel along their tilted orbit rings */
+  electrons.forEach(e=>{
+    const a = t*e.spd + e.phase;
+    e.sprite.position.set(e.R*Math.cos(a), e.R*Math.sin(a), 0);
+    const pulse = 0.30 + 0.10*Math.sin(t*3.0 + e.phase);
+    e.sprite.scale.setScalar(pulse);
+  });
 
   particles.rotation.y=t*.013;
   particles.rotation.x=t*.006;
