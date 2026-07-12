@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cloudX Resume — free resume builder with ATS checker</title>
+<meta name="description" content="Free, private resume builder — 8 templates, upload your existing resume, ATS keyword checker, PDF export. Everything runs in your browser; your resume never leaves your device.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+<style>
+  :root{ --accent:#2563eb; --ink:#111827; --grey:#6b7280; --line:#e5e7eb; --bg:#f4f6fa; --panel:#fff; }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ font-family:-apple-system,"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--ink); font-size:14.5px; }
+  a{ color:var(--accent); text-decoration:none; }
+  button{ font-family:inherit; cursor:pointer; }
+
+  /* ===== chrome ===== */
+  .top{ position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:4px; padding:0 18px; height:56px; }
+  .logo{ font-weight:800; font-size:17px; margin-right:18px; color:var(--ink); }
+  .logo b{ color:var(--accent); }
+  .top nav{ display:flex; gap:2px; height:100%; }
+  .top nav a{ display:flex; align-items:center; padding:0 14px; color:var(--grey); font-weight:600; font-size:13.5px;
+    border-bottom:2.5px solid transparent; }
+  .top nav a.on{ color:var(--accent); border-color:var(--accent); }
+  .top .spacer{ flex:1; }
+  .pill{ font-size:11.5px; background:#eef4ff; color:var(--accent); border:1px solid #d6e4ff; padding:4px 10px; border-radius:99px; font-weight:700; }
+
+  .view{ display:none; max-width:1180px; margin:0 auto; padding:26px 20px 60px; }
+  .view.on{ display:block; }
+
+  /* ===== dashboard ===== */
+  .hello{ background:linear-gradient(120deg,#eef4ff,#f5f0ff 60%,#fff); border:1px solid var(--line); border-radius:16px;
+    padding:30px 28px; margin-bottom:22px; }
+  .hello .tag{ display:inline-block; font-size:12px; font-weight:700; color:var(--accent); background:#fff;
+    border:1px solid #d6e4ff; padding:4px 12px; border-radius:99px; margin-bottom:10px; }
+  .hello h1{ font-size:28px; }
+  .hello p{ color:var(--grey); margin-top:4px; }
+  .quick{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  @media (max-width:900px){ .quick{ grid-template-columns:repeat(2,1fr); } }
+  .qcard{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; cursor:pointer;
+    transition:transform .15s, box-shadow .15s, border-color .15s; }
+  .qcard:hover{ transform:translateY(-3px); box-shadow:0 10px 30px rgba(17,24,39,.08); border-color:#c9d6f5; }
+  .qcard .ico{ width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:20px;
+    background:#eef4ff; margin-bottom:12px; }
+  .qcard h3{ font-size:15.5px; margin-bottom:3px; }
+  .qcard p{ color:var(--grey); font-size:13px; }
+  .privacy{ background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; border-radius:12px; padding:12px 16px;
+    font-size:13px; margin-bottom:22px; }
+
+  .panelbox{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .panelbox h2{ font-size:16px; margin-bottom:14px; }
+  .doclist{ display:flex; flex-direction:column; gap:8px; }
+  .docrow{ display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .docrow:hover{ border-color:#c9d6f5; background:#fafbff; }
+  .docrow .nm{ font-weight:700; cursor:pointer; }
+  .docrow .meta{ color:var(--grey); font-size:12px; }
+  .docrow .grow{ flex:1; }
+  .docrow button{ border:1px solid var(--line); background:#fff; border-radius:7px; padding:5px 10px; font-size:12px; font-weight:600; }
+  .docrow button:hover{ border-color:var(--accent); color:var(--accent); }
+  .empty{ text-align:center; color:var(--grey); padding:30px 0; }
+
+  .btn{ display:inline-flex; align-items:center; gap:7px; background:var(--accent); color:#fff; border:none;
+    border-radius:9px; padding:10px 18px; font-size:13.5px; font-weight:700; }
+  .btn.ghost{ background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .btn.ghost:hover{ border-color:var(--accent); color:var(--accent); }
+
+  /* ===== templates gallery ===== */
+  .tgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(215px,1fr)); gap:18px; }
+  .tcard{ background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer;
+    transition:transform .15s, box-shadow .15s; }
+  .tcard:hover{ transform:translateY(-3px); box-shadow:0 12px 32px rgba(17,24,39,.1); }
+  .thumb{ height:264px; overflow:hidden; position:relative; background:#fff; border-bottom:1px solid var(--line); }
+  .thumb .page-mini{ width:816px; transform:scale(.262); transform-origin:top left; pointer-events:none; }
+  .tcard .cap{ padding:12px 14px; display:flex; justify-content:space-between; align-items:center; }
+  .tcard .cap b{ font-size:14px; }
+  .tcard .cap span{ font-size:11.5px; color:var(--grey); }
+  .tcard.sel{ outline:2.5px solid var(--accent); }
+
+  /* ===== editor ===== */
+  .ed{ display:grid; grid-template-columns:minmax(320px,430px) 1fr; gap:18px; }
+  @media (max-width:980px){ .ed{ grid-template-columns:1fr; } }
+  .edside{ display:flex; flex-direction:column; gap:12px; }
+  .ctrl{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .ctrl label{ font-size:12px; font-weight:700; color:var(--grey); display:block; margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
+  .ctrl .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .ctrl select,.ctrl input[type=text]{ padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; flex:1; }
+  .ctrl input[type=color]{ width:42px; height:36px; border:1px solid var(--line); border-radius:8px; padding:2px; background:#fff; }
+  textarea.json{ width:100%; min-height:330px; font-family:ui-monospace,Menlo,monospace; font-size:12px; padding:10px;
+    border:1px solid var(--line); border-radius:10px; resize:vertical; }
+  .hint{ font-size:12px; color:var(--grey); line-height:1.5; margin-top:6px; }
+  .stage{ background:#e9edf4; border:1px solid var(--line); border-radius:14px; padding:22px; display:flex; justify-content:center;
+    max-height:calc(100vh - 130px); overflow:auto; }
+  .sheet{ width:816px; min-height:1056px; background:#fff; box-shadow:0 8px 34px rgba(17,24,39,.14); flex-shrink:0; }
+
+  /* ===== ATS ===== */
+  .ats{ display:grid; grid-template-columns:minmax(320px,470px) 1fr; gap:18px; }
+  @media (max-width:980px){ .ats{ grid-template-columns:1fr; } }
+  textarea.jd{ width:100%; min-height:150px; font-size:13px; padding:10px; border:1px solid var(--line); border-radius:10px; resize:vertical; }
+  .score{ display:flex; align-items:center; gap:14px; margin:14px 0; }
+  .ring{ width:76px; height:76px; border-radius:50%; display:grid; place-items:center;
+    background:conic-gradient(var(--sc,#22a06b) calc(var(--p,0)*1%), #e6eaf1 0); }
+  .ring i{ width:58px; height:58px; border-radius:50%; background:#fff; display:grid; place-items:center; font-style:normal; font-weight:800; font-size:17px; }
+  .check{ display:flex; gap:8px; padding:7px 2px; font-size:12.8px; border-bottom:1px dashed var(--line); line-height:1.45; }
+  .check b{ flex-shrink:0; width:44px; text-align:center; border-radius:6px; font-size:10.5px; padding:2px 0; margin-top:1px; }
+  .ok b{ background:#e2f6ec; color:#15803d; } .warn b{ background:#fdf3dc; color:#b45309; } .bad b{ background:#fde8e8; color:#b91c1c; }
+  .kw{ display:inline-block; margin:2px 3px 0 0; padding:2px 8px; border-radius:99px; font-size:11.5px; }
+  .kw.hit{ background:#e2f6ec; color:#15803d; } .kw.miss{ background:#fde8e8; color:#b91c1c; }
+
+  /* ===== upload ===== */
+  .drop{ border:2px dashed #c9d6f5; border-radius:16px; background:#fafbff; padding:52px 20px; text-align:center;
+    cursor:pointer; transition:background .2s, border-color .2s; }
+  .drop.over{ background:#eef4ff; border-color:var(--accent); }
+  .drop .big{ font-size:38px; }
+  .drop h3{ margin:10px 0 4px; }
+  .drop p{ color:var(--grey); font-size:13px; }
+  #fileInput{ display:none; }
+  .parsehint{ margin-top:16px; }
+
+  /* scale-to-fit preview wrapper */
+  .stage{ display:block; }
+  .fit{ margin:0 auto; position:relative; }
+  .sheet{ transform-origin:top left; }
+</style>
+<style id="rz-styles">
+  /* ============================================================
+     RESUME TEMPLATES  (shared .rz base + per-template variants)
+     — kept in a dedicated style tag so the PDF print frame can
+       clone exactly these rules.
+     ============================================================ */
+  .rz{ font-size:13.2px; line-height:1.42; color:#1f2937; padding:52px 58px; font-family:Arial,Helvetica,sans-serif; }
+  .rz a{ color:var(--racc,#2563eb); text-decoration:none; }
+  .rz h2{ font-size:13.5px; letter-spacing:.06em; text-transform:uppercase; margin:15px 0 7px; }
+  .rz .nm{ font-size:29px; font-weight:800; }
+  .rz .tt{ font-weight:700; margin:2px 0 5px; color:var(--racc,#2563eb); }
+  .rz .ct{ font-size:12px; color:#6b7280; margin-bottom:2px; }
+  .rz ul{ margin:2px 0 4px 17px; }
+  .rz li{ margin-bottom:3px; }
+  .rz .role{ display:flex; justify-content:space-between; align-items:baseline; margin-top:9px; gap:10px; }
+  .rz .role h4{ font-size:13.4px; }
+  .rz .dt{ font-size:11.6px; color:#6b7280; white-space:nowrap; }
+  .rz .co{ font-style:italic; color:#6b7280; font-size:12.4px; margin:1px 0 3px; }
+  .rz .sk{ margin-bottom:3px; }
+  .rz .nt{ color:#6b7280; }
+
+  /* Kraków — classic, black rules, serif name */
+  .rz-krakow h2{ color:#111; border-bottom:1.5px solid #111; padding-bottom:2px; }
+  .rz-krakow .nm{ font-family:Georgia,serif; font-weight:700; }
+  .rz-krakow .tt{ color:#111; }
+  .rz-krakow a{ color:#111; text-decoration:underline; }
+
+  /* Wisła — professional, numbered sections, accent headers */
+  .rz-wisla h2{ color:var(--racc); counter-increment:sec; }
+  .rz-wisla h2::before{ content:"0" counter(sec) "  "; color:#9ca3af; font-weight:600; }
+  .rz-wisla{ counter-reset:sec; }
+  .rz-wisla .nm{ color:var(--racc); }
+
+  /* Amstel — modern compact, caps name, thin rules */
+  .rz-amstel .nm{ font-size:22px; letter-spacing:.08em; text-transform:uppercase; }
+  .rz-amstel .tt{ font-size:12.5px; letter-spacing:.05em; text-transform:uppercase; }
+  .rz-amstel h2{ font-size:12px; border-bottom:1px solid #d1d5db; padding-bottom:2px; }
+  .rz-amstel{ font-size:12.8px; }
+
+  /* Delft — solid accent header band */
+  .rz-delft{ padding:0; }
+  .rz-delft .band{ background:var(--racc); color:#fff; padding:38px 58px 26px; }
+  .rz-delft .band .nm,.rz-delft .band .tt{ color:#fff; }
+  .rz-delft .band .ct,.rz-delft .band a{ color:rgba(255,255,255,.85); }
+  .rz-delft .body{ padding:20px 58px 52px; }
+  .rz-delft h2{ color:var(--racc); }
+
+  /* Shannon — soft tinted header + two-tone */
+  .rz-shannon{ padding:0; }
+  .rz-shannon .band{ background:color-mix(in srgb, var(--racc) 12%, #fff); padding:38px 58px 22px; border-bottom:3px solid var(--racc); }
+  .rz-shannon .body{ padding:18px 58px 52px; }
+  .rz-shannon h2{ color:var(--racc); border-bottom:1px solid color-mix(in srgb, var(--racc) 30%, #fff); padding-bottom:2px; }
+
+  /* Modern — accent underline headers (like builder v1) */
+  .rz-modern h2{ color:var(--racc); border-bottom:1.6px solid var(--racc); padding-bottom:2px; }
+
+  /* Sidebar — two-column */
+  .rz-sidebar{ display:grid; grid-template-columns:195px 1fr; gap:26px; }
+  .rz-sidebar .left{ background:#f4f6fb; margin:-52px 0 -52px -58px; padding:52px 16px 52px 22px; }
+  .rz-sidebar .left h2{ font-size:11.5px; color:var(--racc); margin-top:16px; }
+  .rz-sidebar .left .sk{ font-size:11.8px; margin-bottom:7px; }
+  .rz-sidebar .left .ct{ font-size:11.2px; word-break:break-word; }
+  .rz-sidebar .main h2{ color:var(--racc); border-bottom:1.5px solid var(--racc); padding-bottom:2px; }
+  .rz-sidebar .nm{ font-size:25px; }
+
+  /* Executive — centered serif */
+  .rz-exec{ font-family:Georgia,"Times New Roman",serif; }
+  .rz-exec .nm,.rz-exec .tt,.rz-exec .ct{ text-align:center; }
+  .rz-exec .tt{ color:#374151; }
+  .rz-exec h2{ text-align:center; letter-spacing:.18em; color:#1f2937; }
+  .rz-exec h2::after{ content:""; display:block; width:52px; height:1.5px; background:var(--racc); margin:4px auto 0; }
+
+  /* monogram circle (Windsor, Bauhaus) */
+  .mg{ width:56px; height:56px; border-radius:50%; background:var(--racc); color:#fff; display:grid; place-items:center;
+    font-weight:800; font-size:19px; letter-spacing:.02em; }
+
+  /* right-rail layout base (Folio, Sterling) */
+  .rz-folio, .rz-sterling{ display:grid; grid-template-columns:1fr 190px; gap:26px; }
+  .rz-folio .rail, .rz-sterling .rail{ background:#f7f8fa; margin:-52px -58px -52px 0; padding:52px 22px 52px 16px; }
+  .rz-folio .rail h2, .rz-sterling .rail h2{ font-size:11.5px; margin-top:16px; }
+  .rz-folio .rail .sk, .rz-sterling .rail .sk{ font-size:11.8px; margin-bottom:7px; }
+  .rz-folio .rail .ct, .rz-sterling .rail .ct{ font-size:11.2px; word-break:break-word; }
+
+  /* Folio — clean sans, thin top rule */
+  .rz-folio .nm{ font-size:26px; letter-spacing:.01em; }
+  .rz-folio .tt{ text-transform:uppercase; font-size:11.5px; letter-spacing:.14em; }
+  .rz-folio .main h2{ border-bottom:1px solid #d1d5db; padding-bottom:2px; color:#111; }
+  .rz-folio .rail h2{ color:var(--racc); }
+
+  /* Sterling — classic serif, double rules, gold-friendly */
+  .rz-sterling{ font-family:Georgia,serif; }
+  .rz-sterling .nm{ font-size:27px; }
+  .rz-sterling .main h2{ border-bottom:3px double var(--racc); padding-bottom:3px; color:#1f2937; letter-spacing:.1em; }
+  .rz-sterling .rail{ background:color-mix(in srgb, var(--racc) 7%, #fff); }
+  .rz-sterling .rail h2{ color:var(--racc); letter-spacing:.1em; }
+
+  /* Windsor — centered classic with monogram */
+  .rz-windsor{ font-family:Georgia,serif; }
+  .rz-windsor .head{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:6px; }
+  .rz-windsor .nm{ font-size:26px; }
+  .rz-windsor .tt{ color:#374151; font-size:13px; }
+  .rz-windsor h2{ text-align:center; letter-spacing:.14em; color:#1f2937; border-bottom:1px solid #d1d5db; padding-bottom:3px; }
+
+  /* Bauhaus — bold solid banner */
+  .rz-bauhaus{ padding:0; }
+  .rz-bauhaus .band{ background:var(--racc); color:#fff; padding:34px 58px; display:flex; gap:18px; align-items:center; }
+  .rz-bauhaus .band .mg{ background:rgba(255,255,255,.18); flex-shrink:0; }
+  .rz-bauhaus .band .nm{ color:#fff; text-transform:uppercase; font-size:23px; letter-spacing:.04em; }
+  .rz-bauhaus .band .tt, .rz-bauhaus .band .ct, .rz-bauhaus .band a{ color:rgba(255,255,255,.88); }
+  .rz-bauhaus .body{ padding:20px 58px 52px; }
+  .rz-bauhaus .body h2{ counter-increment:bsec; color:#111; }
+  .rz-bauhaus .body h2::before{ content:"0" counter(bsec) "  "; color:var(--racc); }
+  .rz-bauhaus .body{ counter-reset:bsec; }
+
+  /* Onyx — minimal, square markers */
+  .rz-onyx .nm{ letter-spacing:.03em; }
+  .rz-onyx .tt{ text-transform:uppercase; font-size:11.5px; letter-spacing:.16em; }
+  .rz-onyx h2{ font-size:12px; letter-spacing:.1em; }
+  .rz-onyx h2::before{ content:"■ "; color:var(--racc); font-size:9px; vertical-align:2px; }
+
+  /* Manhattan — serif small-caps, no rules */
+  .rz-manhattan{ font-family:Georgia,serif; }
+  .rz-manhattan .nm{ font-size:25px; }
+  .rz-manhattan .tt{ color:#374151; font-variant:small-caps; letter-spacing:.06em; }
+  .rz-manhattan h2{ font-variant:small-caps; letter-spacing:.12em; color:#111; border:none; font-size:14.5px; }
+
+  /* Slate — dark executive header */
+  .rz-slate{ padding:0; font-family:Georgia,serif; }
+  .rz-slate .band{ background:#1c2430; color:#fff; padding:36px 58px 26px; border-radius:0; }
+  .rz-slate .band .nm{ color:#fff; text-transform:uppercase; letter-spacing:.05em; font-size:22px; }
+  .rz-slate .band .tt{ color:color-mix(in srgb, var(--racc) 65%, #fff); text-transform:uppercase; font-size:11px; letter-spacing:.2em; }
+  .rz-slate .band .ct, .rz-slate .band a{ color:rgba(255,255,255,.8); }
+  .rz-slate .body{ padding:20px 58px 52px; }
+  .rz-slate .body h2::before{ content:"§ "; color:var(--racc); }
+  .rz-slate .body h2{ color:#1f2937; letter-spacing:.08em; }
+
+  /* Vertex — professional blue, spaced caps name, fine rules */
+  .rz-vertex .nm{ text-transform:uppercase; letter-spacing:.14em; font-size:21px; }
+  .rz-vertex .tt{ text-transform:uppercase; font-size:11px; letter-spacing:.18em; }
+  .rz-vertex h2{ color:var(--racc); font-size:12px; letter-spacing:.12em; border-bottom:1px solid var(--racc); padding-bottom:3px; }
+  .rz-vertex .role h4{ color:#111; }
+
+</style>
+<style id="app-print">
+  /* ===== fallback print (Cmd+P on the app page): only the sheet ===== */
+  @media print{
+    @page{ size:Letter; margin:12mm; }
+    body{ background:#fff; }
+    body *{ visibility:hidden; }
+    #sheet, #sheet *{ visibility:visible; }
+    #sheet{ position:absolute; left:0; top:0; width:100%; box-shadow:none; transform:none !important; }
+    .rz{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <span class="logo">cloud<b>X</b> Resume</span>
+  <nav id="nav">
+    <a href="#dashboard" data-v="dashboard" class="on">Dashboard</a>
+    <a href="#documents" data-v="documents">Documents</a>
+    <a href="#templates" data-v="templates">Templates</a>
+    <a href="#editor" data-v="editor">Editor</a>
+    <a href="#ats" data-v="ats">ATS Checker</a>
+  </nav>
+  <span class="spacer"></span>
+  <span class="pill">🔒 100% in your browser — nothing is uploaded</span>
+</header>
+
+<!-- ================= DASHBOARD ================= -->
+<section class="view on" id="v-dashboard">
+  <div class="hello">
+    <span class="tag">✦ Free resume builder by cloudx.co.in</span>
+    <h1>Build a resume that gets read.</h1>
+    <p>Pick a template, import your existing resume, pass the ATS check, download a polished PDF.</p>
+  </div>
+  <div class="privacy">🔒 <b>Free forever &amp; private by design:</b> no accounts, no paywalls, no limits. Everything runs locally in your browser — your resume is never uploaded to any server, documents save to this device only.</div>
+  <div class="quick">
+    <div class="qcard" data-go="new"><div class="ico">＋</div><h3>New resume</h3><p>Start from a clean sample</p></div>
+    <div class="qcard" data-go="upload"><div class="ico">⤴︎</div><h3>Upload</h3><p>Import a PDF / DOCX / TXT</p></div>
+    <div class="qcard" data-go="templates"><div class="ico">🗂</div><h3>Templates</h3><p>8 designs, one click to switch</p></div>
+    <div class="qcard" data-go="ats"><div class="ico">🎯</div><h3>ATS check</h3><p>Match against any job post</p></div>
+  </div>
+  <div class="panelbox">
+    <h2>Your documents</h2>
+    <div class="doclist" id="dash-docs"></div>
+  </div>
+</section>
+
+<!-- ================= DOCUMENTS ================= -->
+<section class="view" id="v-documents">
+  <div class="panelbox">
+    <h2>Documents <button class="btn" style="float:right" id="docsNewBtn">＋ New resume</button></h2>
+    <div class="doclist" id="doc-list"></div>
+  </div>
+</section>
+
+<!-- ================= TEMPLATES ================= -->
+<section class="view" id="v-templates">
+  <div class="panelbox" style="margin-bottom:18px"><h2 style="margin:0">Templates — click one to use it with your active document</h2></div>
+  <div class="tgrid" id="tgrid"></div>
+</section>
+
+<!-- ================= EDITOR ================= -->
+<section class="view" id="v-editor">
+  <div class="ed">
+    <div class="edside">
+      <div class="ctrl">
+        <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+          <input type="text" id="docName" placeholder="Document name" style="font-weight:700">
+        </div>
+        <div class="row">
+          <select id="tplSel"></select>
+          <input type="color" id="accSel" value="#2563eb" title="Accent color">
+          <button class="btn" id="printBtn">⬇ PDF</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn ghost" id="saveBtn">💾 Save</button>
+          <button class="btn ghost" id="dupBtn">⧉ Duplicate</button>
+          <button class="btn ghost" id="jsonBtn">⤓ Export JSON</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <label>Resume data (JSON)</label>
+        <textarea class="json" id="jsonEd"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn" id="applyBtn">Apply</button></div>
+        <p class="hint">Start bullets with strong verbs (Led, Built, Cut, Shipped…) and put numbers in wherever they're true — the ATS checker scores you on both.</p>
+      </div>
+    </div>
+    <div class="stage" id="stage"><div class="fit" id="fitWrap"><div class="sheet" id="sheet"></div></div></div>
+  </div>
+</section>
+
+<!-- ================= ATS ================= -->
+<section class="view" id="v-ats">
+  <div class="ats">
+    <div>
+      <div class="ctrl">
+        <label>Job description</label>
+        <textarea class="jd" id="jd" placeholder="Paste the job post here, then Analyze — we extract its keywords and show which ones your active resume is missing."></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="analyzeBtn">Analyze against JD</button>
+          <button class="btn ghost" id="genericBtn">Generic checks only</button>
+        </div>
+      </div>
+      <div class="ctrl" style="margin-top:12px" id="report"><p class="hint">Run a check to see your score. Scoring: 60% JD keyword match + 40% resume quality (quantified bullets, action verbs, length, contact info).</p></div>
+    </div>
+    <div class="stage" id="atsStage"><div class="fit" id="atsFit"><div class="sheet" id="atsSheet"></div></div></div>
+  </div>
+</section>
+
+<!-- ================= UPLOAD (modal-ish view) ================= -->
+<section class="view" id="v-upload">
+  <div class="panelbox">
+    <h2>Import your existing resume</h2>
+    <div class="drop" id="drop">
+      <div class="big">📄</div>
+      <h3>Drop a PDF, DOCX or TXT here — or click to choose</h3>
+      <p>Parsed locally in your browser. We auto-detect contact info, experience, skills &amp; education — you fix anything we get wrong in the editor.</p>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf,.docx,.txt,application/pdf">
+    <p class="hint parsehint">Parsing is best-effort: complex multi-column PDFs may need manual cleanup. Your file never leaves this device.</p>
+    <div id="parseStatus"></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="app.js?v=3"></script>
+</body>
+</html>
