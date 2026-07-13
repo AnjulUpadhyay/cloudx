@@ -84,6 +84,10 @@ const TEMPLATES = [
   { id: "manhattan", name: "Manhattan", tag: "Classic",      layout: "single" },
   { id: "slate",     name: "Slate",     tag: "Executive",    layout: "band"   },
   { id: "vertex",    name: "Vertex",    tag: "Professional", layout: "single" },
+  { id: "azurite",   name: "Azurite",   tag: "Two-column",   layout: "side"   },
+  { id: "meridian",  name: "Meridian",  tag: "Minimal",      layout: "single" },
+  { id: "bordeaux",  name: "Bordeaux",  tag: "Bold",         layout: "band"   },
+  { id: "gardenia",  name: "Gardenia",  tag: "Professional", layout: "single" },
 ];
 
 /* ---------------- documents store ---------------- */
@@ -249,7 +253,20 @@ function renderGallery(){
     card.onclick = ()=>{ d.template = t.id; d.updated = Date.now(); saveDocs(docs); go("editor"); };
     g.appendChild(card);
   });
+  scaleThumbs();
 }
+/* scale each mini preview to exactly fill its card width (no right gap) */
+function applyThumbScale(){
+  document.querySelectorAll("#tgrid .thumb").forEach(th=>{
+    const m = th.querySelector(".page-mini");
+    if (m && th.clientWidth) m.style.transform = `scale(${th.clientWidth / 816})`;
+  });
+}
+function scaleThumbs(){
+  requestAnimationFrame(applyThumbScale);
+  setTimeout(applyThumbScale, 150);   // again after layout/scrollbar settles
+}
+addEventListener("resize", scaleThumbs);
 
 /* ---------------- scale-to-fit preview ----------------
    The sheet is a fixed 816px "paper"; we scale it down so it always
@@ -273,9 +290,133 @@ function openEditor(){
   sel.innerHTML = TEMPLATES.map(t=>`<option value="${t.id}" ${t.id===d.template?"selected":""}>${t.name} — ${t.tag}</option>`).join("");
   $("accSel").value = d.accent;
   $("jsonEd").value = JSON.stringify(d.data, null, 2);
+  renderForm();
   renderResume($("sheet"), d.data, d.template, d.accent);
   fitSheet("stage","fitWrap","sheet");
 }
+
+/* ---------------- form editor (no JSON knowledge needed) ---------------- */
+const F = $("formEd");
+const fin  = (path, val, ph) => `<input data-p="${path}" value="${esc(val ?? "")}" placeholder="${ph||""}">`;
+const farea = (path, val, rows, ph) => `<textarea data-p="${path}" rows="${rows||3}" placeholder="${ph||""}">${esc(val ?? "")}</textarea>`;
+
+function renderForm(){
+  const d = activeDoc().data;
+  F.innerHTML = `
+  <details open><summary>👤 Basics</summary><div class="fbody">
+    <span class="flabel">Full name</span>${fin("name", d.name)}
+    <span class="flabel">Headline / target role</span>${fin("title", d.title, "e.g. Senior DevOps Engineer")}
+    <div class="frow">${fin("location", d.location, "City, Country")}${fin("phone", d.phone, "Phone")}</div>
+    <span class="flabel">Email</span>${fin("email", d.email)}
+  </details>
+
+  <details><summary>🔗 Links</summary><div class="fbody">
+    ${(d.links||[]).map((l,i)=>`<div class="frow">
+      ${fin(`links.${i}.label`, l.label, "Label shown")}${fin(`links.${i}.url`, l.url, "https://…")}
+      <button class="mini del" data-act="del" data-list="links" data-i="${i}">✕</button></div>`).join("")}
+    <button class="addbtn" data-act="add" data-list="links">＋ Add link</button>
+  </div></details>
+
+  <details><summary>📝 Summary</summary><div class="fbody">
+    ${farea("summary", d.summary, 5, "3–4 lines: seniority, core stack, one or two quantified wins.")}
+  </div></details>
+
+  <details><summary>🛠 Skills</summary><div class="fbody">
+    ${(d.skills||[]).map((s,i)=>`<div class="frow">
+      ${fin(`skills.${i}.label`, s.label, "Group (e.g. Cloud)")}${fin(`skills.${i}.items`, s.items, "Comma-separated skills")}
+      <button class="mini del" data-act="del" data-list="skills" data-i="${i}">✕</button></div>`).join("")}
+    <button class="addbtn" data-act="add" data-list="skills">＋ Add skill group</button>
+  </div></details>
+
+  <details open><summary>💼 Experience</summary><div class="fbody">
+    ${(d.experience||[]).map((e,i)=>`<div class="fcard">
+      <div class="frow">${fin(`experience.${i}.role`, e.role, "Job title")}
+        <button class="mini" data-act="up" data-list="experience" data-i="${i}" title="Move up">↑</button>
+        <button class="mini" data-act="down" data-list="experience" data-i="${i}" title="Move down">↓</button>
+        <button class="mini del" data-act="del" data-list="experience" data-i="${i}">✕</button></div>
+      <div class="frow">${fin(`experience.${i}.company`, e.company, "Company, City")}${fin(`experience.${i}.date`, e.date, "Jan 2022 – Present")}</div>
+      <span class="flabel">Achievements — one per line</span>
+      ${farea(`experience.${i}.bullets`, (e.bullets||[]).join("\n"), 4, "Led / Built / Cut …")}
+    </div>`).join("")}
+    <button class="addbtn" data-act="add" data-list="experience">＋ Add role</button>
+  </div></details>
+
+  <details><summary>🚀 Projects</summary><div class="fbody">
+    ${(d.projects||[]).map((p,i)=>`<div class="fcard">
+      <div class="frow">${fin(`projects.${i}.name`, p.name, "Project name")}
+        <button class="mini del" data-act="del" data-list="projects" data-i="${i}">✕</button></div>
+      <span class="flabel">Highlights — one per line</span>
+      ${farea(`projects.${i}.bullets`, (p.bullets||[]).join("\n"), 3)}
+    </div>`).join("")}
+    <button class="addbtn" data-act="add" data-list="projects">＋ Add project</button>
+  </div></details>
+
+  <details><summary>🎓 Education</summary><div class="fbody">
+    ${(d.education||[]).map((e,i)=>`<div class="fcard">
+      <div class="frow">${fin(`education.${i}.degree`, e.degree, "Degree — Institution")}
+        <button class="mini del" data-act="del" data-list="education" data-i="${i}">✕</button></div>
+      <div class="frow">${fin(`education.${i}.date`, e.date, "2012 – 2016")}${fin(`education.${i}.note`, e.note, "GPA / note (optional)")}</div>
+    </div>`).join("")}
+    <button class="addbtn" data-act="add" data-list="education">＋ Add education</button>
+  </div></details>
+
+  <details><summary>🏅 Certifications</summary><div class="fbody">
+    <span class="flabel">One per line</span>
+    ${farea("certifications", (d.certifications||[]).join("\n"), 4)}
+  </div></details>`;
+}
+
+/* write a form field back into the data object */
+function setPath(data, path, value){
+  const parts = path.split(".");
+  let o = data;
+  for (let i=0;i<parts.length-1;i++) o = o[parts[i]];
+  const last = parts[parts.length-1];
+  if (last === "bullets") o.bullets = value.split("\n").map(s=>s.trim()).filter(Boolean);
+  else if (path === "certifications") data.certifications = value.split("\n").map(s=>s.trim()).filter(Boolean);
+  else o[last] = value;
+}
+let formTimer = null;
+F.addEventListener("input", e=>{
+  const p = e.target.dataset.p;
+  if (!p) return;
+  setPath(activeDoc().data, p, e.target.value);
+  clearTimeout(formTimer);
+  formTimer = setTimeout(()=>{
+    saveActive();
+    $("jsonEd").value = JSON.stringify(activeDoc().data, null, 2);
+    renderResume($("sheet"), activeDoc().data, activeDoc().template, activeDoc().accent);
+    fitSheet("stage","fitWrap","sheet");
+  }, 250);
+});
+const BLANKS = {
+  links: {label:"", url:""},
+  skills: {label:"", items:""},
+  experience: {role:"", company:"", date:"", bullets:[]},
+  projects: {name:"", bullets:[]},
+  education: {degree:"", date:"", note:""},
+};
+F.addEventListener("click", e=>{
+  const b = e.target.closest("button"); if (!b || !b.dataset.act) return;
+  e.preventDefault();
+  const d = activeDoc().data, list = b.dataset.list, i = +b.dataset.i;
+  if (b.dataset.act==="add") (d[list] ||= []).push(structuredClone(BLANKS[list]));
+  if (b.dataset.act==="del") d[list].splice(i,1);
+  if (b.dataset.act==="up" && i>0) [d[list][i-1],d[list][i]] = [d[list][i],d[list][i-1]];
+  if (b.dataset.act==="down" && i<d[list].length-1) [d[list][i+1],d[list][i]] = [d[list][i],d[list][i+1]];
+  saveActive(); openEditor();
+});
+/* Form / JSON tab switch */
+document.querySelectorAll(".edtabs button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll(".edtabs button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    $("edpane-form").style.display = b.dataset.ed==="form" ? "" : "none";
+    $("edpane-json").style.display = b.dataset.ed==="json" ? "" : "none";
+    if (b.dataset.ed==="form") renderForm();
+    else $("jsonEd").value = JSON.stringify(activeDoc().data, null, 2);
+  };
+});
 function saveActive(){
   const d = activeDoc();
   d.name = $("docName").value || "My resume";
@@ -292,45 +433,64 @@ $("saveBtn").onclick = () => { saveActive(); alert("Saved on this device ✓"); 
 $("dupBtn").onclick = () => { const src=activeDoc(); const id=uid();
   docs[id]={...structuredClone(src), name:src.name+" (copy)", updated:Date.now()}; activeId=id;
   localStorage.setItem(LS_ACTIVE,id); saveDocs(docs); openEditor(); };
-/* PDF export: render into a hidden iframe with ONLY the template CSS +
-   print-tuned page rules. Fixes: missing background colors, content
-   clipped by the app layout, and broken pagination on multi-column
-   templates. */
-function printResume(){
-  saveActive();
-  const d = activeDoc();
+/* ---------------- PDF export ----------------
+   Opens a dedicated print window (works on mobile too, unlike hidden
+   iframes). @page{margin:0} suppresses the browser's automatic URL/
+   date header & footer; per-page margins come from a repeating table
+   header/footer (thead/tfoot repeat on every printed page). */
+function buildPrintHTML(d){
   const holder = document.createElement("div");
   renderResume(holder, d.data, d.template, d.accent);
   const rzCss = document.getElementById("rz-styles").innerHTML;
-  const ifr = document.createElement("iframe");
-  ifr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
-  document.body.appendChild(ifr);
-  const idoc = ifr.contentDocument;
-  idoc.open();
-  idoc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(d.data.name || d.name)} — Resume</title><style>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>${esc(d.data.name || d.name)} — Resume</title><style>
     ${rzCss}
     *{ margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    @page{ size:Letter; margin:12mm; }
-    body{ font-family:Arial,Helvetica,sans-serif; background:#fff; }
-    /* page margins come from @page — strip the on-screen paper padding */
+    @page{ size:Letter; margin:0; }  /* margin 0 = no browser header/footer */
+    html,body{ background:#fff; }
+    body{ font-family:Arial,Helvetica,sans-serif; }
+    table.pg{ width:100%; border-collapse:collapse; }
+    table.pg td{ padding:0; }
+    .pgm{ height:11mm; }                 /* repeated top/bottom page margin */
+    .pgc{ padding:0 13mm; }              /* side margins */
     .rz{ padding:0; }
     .rz-sidebar{ grid-template-columns:180px 1fr; }
     .rz-sidebar .left{ margin:0; padding:16px 14px; }
     .rz-folio .rail, .rz-sterling .rail{ margin:0; padding:16px 14px; }
-    .rz-delft, .rz-shannon, .rz-bauhaus, .rz-slate{ padding:0; }
-    .rz-delft .band, .rz-shannon .band, .rz-slate .band{ padding:24px 26px 18px; }
+    .rz-delft, .rz-shannon, .rz-bauhaus, .rz-slate, .rz-bordeaux{ padding:0; }
+    .rz-delft .band, .rz-shannon .band, .rz-slate .band, .rz-bordeaux .band{ padding:24px 26px 18px; }
     .rz-bauhaus .band{ padding:22px 26px; }
-    .rz-delft .body, .rz-shannon .body, .rz-bauhaus .body, .rz-slate .body{ padding:14px 0 0; }
-    /* keep experience entries from splitting awkwardly across pages */
+    .rz-delft .body, .rz-shannon .body, .rz-bauhaus .body, .rz-slate .body, .rz-bordeaux .body{ padding:14px 0 0; }
     .rz .role, .rz .co, .rz h2{ break-after:avoid-page; }
     .rz li{ break-inside:avoid-page; }
-  </style></head><body>${holder.innerHTML}</body></html>`);
-  idoc.close();
-  setTimeout(()=>{
-    try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }
-    catch(e){ window.print(); } // fallback: app-page print CSS
-    setTimeout(()=>ifr.remove(), 4000);
-  }, 350);
+    @media screen{ body{ padding:20px; } .pgm{ height:0; } }
+  </style></head><body>
+  <table class="pg">
+    <thead><tr><td><div class="pgm"></div></td></tr></thead>
+    <tbody><tr><td><div class="pgc">${holder.innerHTML}</div></td></tr></tbody>
+    <tfoot><tr><td><div class="pgm"></div></td></tr></tfoot>
+  </table>
+  <script>
+    window.addEventListener("load", function(){
+      setTimeout(function(){ window.focus(); window.print(); }, 250);
+    });
+  <\/script></body></html>`;
+}
+function printResume(){
+  saveActive();
+  const d = activeDoc();
+  const html = buildPrintHTML(d);
+  const w = window.open("", "_blank");
+  if (w){
+    w.document.open(); w.document.write(html); w.document.close();
+  } else {
+    // popup blocked — fall back to hidden iframe
+    const ifr = document.createElement("iframe");
+    ifr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(ifr);
+    ifr.contentDocument.open(); ifr.contentDocument.write(html); ifr.contentDocument.close();
+    setTimeout(()=>ifr.remove(), 6000);
+  }
 }
 $("printBtn").onclick = printResume;
 $("jsonBtn").onclick = () => {
@@ -479,21 +639,37 @@ function parseResumeText(raw){
   const ni = lines.indexOf(d.name);
   d.title = (lines.slice(ni+1).find(l=>l.length<70 && !/@|\+\d|linkedin|github|http/i.test(l)) || "");
 
-  // section split
-  const SEC = /^(professional\s+)?(summary|profile|about( me)?|objective|work experience|experience|employment( history)?|education|academic|skills?|technical skills|core (skills|competencies)|projects?|personal projects?|certifications?|licenses?|awards?)\b[:\s]*$/i;
+  // section split — match headers even when PDF extraction letter-spaces
+  // them ("C E R T I F I C A T I O N S") by comparing squished text
+  const HEADER_MAP = [
+    ["summary",        ["summary","profile","about","aboutme","objective","professionalsummary"]],
+    ["experience",     ["workexperience","experience","employment","employmenthistory","professionalexperience","workhistory"]],
+    ["education",      ["education","academic","academicbackground"]],
+    ["skills",         ["skills","skill","technicalskills","coreskills","corecompetencies","skillstools","toolbox"]],
+    ["projects",       ["projects","project","personalprojects","aipersonalprojects","additionalbuilds"]],
+    ["certifications", ["certifications","certification","licenses","licensescertifications","awards","awardscertifications"]],
+  ];
+  const squish = s => s.toLowerCase().replace(/[^a-z]/g,"");
+  const headerFor = l => {
+    if (l.length > 44) return null;
+    const q = squish(l);
+    if (!q || q.length > 30) return null;
+    for (const [key, names] of HEADER_MAP) if (names.includes(q)) return key;
+    return null;
+  };
   const sections = {};
   let cur = "_head";
   lines.forEach(l=>{
-    const m = l.match(SEC);
-    if (m && l.length < 40){ cur = m[2].toLowerCase(); sections[cur] = []; }
+    const h = headerFor(l);
+    if (h){ cur = h; sections[cur] ||= []; }
     else (sections[cur] ||= []).push(l);
   });
   const sec = names => names.map(n=>sections[n]).find(Boolean) || null;
 
-  const sum = sec(["summary","profile","about","about me","objective"]);
+  const sum = sec(["summary"]);
   if (sum) d.summary = sum.join(" ").slice(0, 900);
 
-  const sk = sec(["skills","skill","technical skills","core skills","core competencies"]);
+  const sk = sec(["skills"]);
   if (sk){
     sk.forEach(l=>{
       const m = l.match(/^[•\-–●▪\s]*([A-Za-z &/+]+?)\s*[:：]\s*(.+)$/);
@@ -502,7 +678,7 @@ function parseResumeText(raw){
     if (!d.skills.length) d.skills.push({label:"Skills", items: sk.join(", ").replace(/[•●▪]/g,",").replace(/\s*,\s*/g,", ").replace(/^, |, $/g,"")});
   }
 
-  const exp = sec(["work experience","experience","employment","employment history"]);
+  const exp = sec(["experience"]);
   if (exp){
     const DATE = /((jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{4}|\d{4})\s*[–\-—to]+\s*((jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{4}|\d{4}|present|current)/i;
     let job = null;
@@ -525,7 +701,7 @@ function parseResumeText(raw){
     if (job) d.experience.push(job);
   }
 
-  const edu = sec(["education","academic"]);
+  const edu = sec(["education"]);
   if (edu){
     const DATE = /\d{4}\s*[–\-—to]*\s*(\d{4})?/;
     edu.forEach(l=>{
@@ -536,10 +712,10 @@ function parseResumeText(raw){
     d.education = d.education.slice(0,4);
   }
 
-  const cert = sec(["certifications","certification","licenses","awards"]);
+  const cert = sec(["certifications"]);
   if (cert) d.certifications = cert.map(l=>l.replace(/^[•\-–●▪*]\s*/,"")).filter(l=>l.length>2).slice(0,10);
 
-  const proj = sec(["projects","project","personal projects"]);
+  const proj = sec(["projects"]);
   if (proj){
     let p = null;
     proj.forEach(l=>{
@@ -556,5 +732,6 @@ function parseResumeText(raw){
 }
 
 /* ---------------- boot ---------------- */
+const tc = $("tplCount"); if (tc) tc.textContent = TEMPLATES.length;
 if (!Object.keys(docs).length) newDoc(structuredClone(SAMPLE), "Sample resume");
 go(location.hash.slice(1) || "dashboard");

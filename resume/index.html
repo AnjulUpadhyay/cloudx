@@ -120,6 +120,44 @@
   .stage{ display:block; }
   .fit{ margin:0 auto; position:relative; }
   .sheet{ transform-origin:top left; }
+
+  /* ===== form editor ===== */
+  .edtabs{ display:flex; gap:6px; margin-bottom:12px; }
+  .edtabs button{ flex:1; padding:8px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:12.5px; font-weight:700; color:var(--grey); }
+  .edtabs button.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  #formEd details{ border:1px solid var(--line); border-radius:10px; margin-bottom:8px; background:#fff; }
+  #formEd summary{ cursor:pointer; font-weight:700; font-size:13px; padding:10px 12px; user-select:none; }
+  #formEd details[open] summary{ border-bottom:1px solid var(--line); }
+  #formEd .fbody{ padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  #formEd .frow{ display:flex; gap:6px; align-items:center; }
+  #formEd input, #formEd textarea{ width:100%; min-width:0; padding:7px 9px; border:1px solid var(--line); border-radius:7px; font-size:12.8px; font-family:inherit; }
+  .edtabs button{ min-width:0; white-space:nowrap; }
+  #formEd textarea{ resize:vertical; min-height:56px; line-height:1.5; }
+  #formEd .flabel{ font-size:11px; font-weight:700; color:var(--grey); text-transform:uppercase; letter-spacing:.04em; }
+  #formEd .fcard{ border:1px solid var(--line); border-radius:9px; padding:9px; display:flex; flex-direction:column; gap:6px; background:#fafbff; }
+  #formEd .fcard .frow input{ background:#fff; }
+  #formEd .mini{ padding:4px 8px; border:1px solid var(--line); background:#fff; border-radius:6px; font-size:11.5px; font-weight:700; color:var(--grey); flex:none; }
+  #formEd .mini:hover{ color:var(--accent); border-color:var(--accent); }
+  #formEd .mini.del:hover{ color:#b91c1c; border-color:#b91c1c; }
+  #formEd .addbtn{ padding:7px; border:1.5px dashed #c9d6f5; background:#fff; color:var(--accent); border-radius:8px; font-size:12px; font-weight:700; }
+
+  /* ===== mobile ===== */
+  @media (max-width:760px){
+    .top{ flex-wrap:wrap; height:auto; padding:8px 10px 0; gap:8px; }
+    .logo{ font-size:15px; margin-right:6px; }
+    .pill{ display:none; }
+    .top nav{ order:3; width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .top nav a{ padding:8px 10px; white-space:nowrap; font-size:12.5px; }
+    .view{ padding:14px 10px 44px; }
+    .hello{ padding:20px 16px; } .hello h1{ font-size:21px; }
+    .quick{ gap:10px; } .qcard{ padding:14px; }
+    .stage{ padding:10px; max-height:none; overflow:visible; }
+    .ed, .ats{ gap:12px; }
+    .ctrl .row{ flex-wrap:wrap; }
+    .docrow{ flex-wrap:wrap; }
+    .tgrid{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+    .thumb{ height:190px; }
+  }
 </style>
 <style id="rz-styles">
   /* ============================================================
@@ -263,6 +301,34 @@
   .rz-vertex h2{ color:var(--racc); font-size:12px; letter-spacing:.12em; border-bottom:1px solid var(--racc); padding-bottom:3px; }
   .rz-vertex .role h4{ color:#111; }
 
+  /* Azurite — dark left sidebar (no photo) */
+  .rz-azurite .left{ background:#1d2839; color:#e6eaf2; }
+  .rz-azurite .left h2{ color:color-mix(in srgb, var(--racc) 70%, #fff); }
+  .rz-azurite .left .ct, .rz-azurite .left .sk, .rz-azurite .left .nt{ color:#c3cad8; }
+  .rz-azurite .left a{ color:#dbe4f5; }
+  .rz-azurite .main h2{ color:#1d2839; border-bottom:2px solid var(--racc); padding-bottom:2px; }
+
+  /* Meridian — centered minimalist, thin dividers, monochrome */
+  .rz-meridian .nm{ text-align:center; font-size:23px; letter-spacing:.22em; text-transform:uppercase; font-weight:600; }
+  .rz-meridian .tt{ text-align:center; color:#374151; font-size:12px; letter-spacing:.12em; text-transform:uppercase; font-weight:500; }
+  .rz-meridian .ct{ text-align:center; }
+  .rz-meridian h2{ font-size:11.5px; letter-spacing:.2em; color:#111; border-top:1px solid #d1d5db; padding-top:7px; margin-top:17px; }
+  .rz-meridian a{ color:#374151; }
+
+  /* Bordeaux — deep solid header, white name, right-aligned contact */
+  .rz-bordeaux{ padding:0; }
+  .rz-bordeaux .band{ background:color-mix(in srgb, var(--racc) 78%, #200a18); color:#fff; padding:32px 58px; }
+  .rz-bordeaux .band .nm{ color:#fff; font-size:24px; text-transform:uppercase; letter-spacing:.06em; }
+  .rz-bordeaux .band .tt{ color:rgba(255,255,255,.92); text-transform:uppercase; font-size:11px; letter-spacing:.14em; }
+  .rz-bordeaux .band .ct, .rz-bordeaux .band a{ color:rgba(255,255,255,.85); }
+  .rz-bordeaux .body{ padding:20px 58px 52px; }
+  .rz-bordeaux .body h2{ color:color-mix(in srgb, var(--racc) 78%, #200a18); border-bottom:1.5px solid color-mix(in srgb, var(--racc) 40%, #fff); padding-bottom:2px; }
+
+  /* Gardenia — light band section headers */
+  .rz-gardenia h2{ background:#f1f3f6; padding:5px 9px; font-size:12px; letter-spacing:.08em; color:#1f2937; border-left:3px solid var(--racc); }
+  .rz-gardenia .nm{ font-size:24px; }
+  .rz-gardenia .tt{ color:#374151; }
+
 </style>
 <style id="app-print">
   /* ===== fallback print (Cmd+P on the app page): only the sheet ===== */
@@ -302,7 +368,7 @@
   <div class="quick">
     <div class="qcard" data-go="new"><div class="ico">＋</div><h3>New resume</h3><p>Start from a clean sample</p></div>
     <div class="qcard" data-go="upload"><div class="ico">⤴︎</div><h3>Upload</h3><p>Import a PDF / DOCX / TXT</p></div>
-    <div class="qcard" data-go="templates"><div class="ico">🗂</div><h3>Templates</h3><p>8 designs, one click to switch</p></div>
+    <div class="qcard" data-go="templates"><div class="ico">🗂</div><h3>Templates</h3><p><span id="tplCount">…</span> designs, one click to switch</p></div>
     <div class="qcard" data-go="ats"><div class="ico">🎯</div><h3>ATS check</h3><p>Match against any job post</p></div>
   </div>
   <div class="panelbox">
@@ -345,10 +411,19 @@
         </div>
       </div>
       <div class="ctrl">
-        <label>Resume data (JSON)</label>
-        <textarea class="json" id="jsonEd"></textarea>
-        <div class="row" style="margin-top:8px"><button class="btn" id="applyBtn">Apply</button></div>
-        <p class="hint">Start bullets with strong verbs (Led, Built, Cut, Shipped…) and put numbers in wherever they're true — the ATS checker scores you on both.</p>
+        <div class="edtabs">
+          <button class="on" data-ed="form">✏️ Edit resume</button>
+          <button data-ed="json">{} Advanced (JSON)</button>
+        </div>
+        <div id="edpane-form">
+          <div id="formEd"></div>
+          <p class="hint">Start bullets with strong verbs (Led, Built, Cut, Shipped…) and put numbers in wherever they're true — the ATS checker scores you on both. Changes save automatically.</p>
+        </div>
+        <div id="edpane-json" style="display:none">
+          <textarea class="json" id="jsonEd"></textarea>
+          <div class="row" style="margin-top:8px"><button class="btn" id="applyBtn">Apply</button></div>
+          <p class="hint">Full data as JSON — for power users, or pasting an exported file.</p>
+        </div>
       </div>
     </div>
     <div class="stage" id="stage"><div class="fit" id="fitWrap"><div class="sheet" id="sheet"></div></div></div>
@@ -390,6 +465,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
