@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>cloudX Resume — free resume builder with ATS checker</title>
-<meta name="description" content="Free, private resume builder — 8 templates, upload your existing resume, ATS keyword checker, PDF export. Everything runs in your browser; your resume never leaves your device.">
+<meta name="description" content="Free, private resume builder — 20 templates (with optional photo), upload your existing resume, ATS keyword checker, PDF export. Everything runs in your browser; your resume never leaves your device.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
 <style>
   :root{ --accent:#2563eb; --ink:#111827; --grey:#6b7280; --line:#e5e7eb; --bg:#f4f6fa; --panel:#fff; }
@@ -180,7 +180,15 @@
   .rz .sk{ margin-bottom:3px; }
   .rz .nt{ color:#6b7280; }
 
-  /* Kraków — classic, black rules, serif name */
+  /* skill chips (Vertex, Bordeaux) */
+  .chipwrap{ display:inline; }
+  .chip{ display:inline-block; border:1px solid color-mix(in srgb, var(--racc) 45%, #fff); color:#1f2937;
+    background:color-mix(in srgb, var(--racc) 7%, #fff); padding:1.5px 9px; border-radius:99px;
+    font-size:11px; margin:2px 4px 2px 0; }
+  .sk .chipwrap{ display:block; margin-top:2px; }
+
+  /* Kraków — classic, black rules, serif name, thick top rule */
+  .rz-krakow{ border-top:7px solid #111; }
   .rz-krakow h2{ color:#111; border-bottom:1.5px solid #111; padding-bottom:2px; }
   .rz-krakow .nm{ font-family:Georgia,serif; font-weight:700; }
   .rz-krakow .tt{ color:#111; }
@@ -287,11 +295,16 @@
   .rz-onyx h2{ font-size:12px; letter-spacing:.1em; }
   .rz-onyx h2::before{ content:"■ "; color:var(--racc); font-size:9px; vertical-align:2px; }
 
-  /* Manhattan — serif small-caps, no rules */
+  /* Manhattan — serif small-caps, trailing hairline after each heading */
   .rz-manhattan{ font-family:Georgia,serif; }
   .rz-manhattan .nm{ font-size:25px; }
   .rz-manhattan .tt{ color:#374151; font-variant:small-caps; letter-spacing:.06em; }
-  .rz-manhattan h2{ font-variant:small-caps; letter-spacing:.12em; color:#111; border:none; font-size:14.5px; }
+  .rz-manhattan h2{ font-variant:small-caps; letter-spacing:.12em; color:#111; border:none; font-size:14.5px;
+    display:flex; align-items:center; gap:12px; }
+  .rz-manhattan h2::after{ content:""; flex:1; border-top:1px solid #c9ced8; }
+
+  /* Ganges — two-column skills grid */
+  .rz-modern .sk{ display:inline-block; width:48%; vertical-align:top; margin-right:1.5%; }
 
   /* Slate — dark executive header */
   .rz-slate{ padding:0; font-family:Georgia,serif; }
@@ -473,6 +486,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

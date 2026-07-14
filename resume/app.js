@@ -83,12 +83,13 @@ const TEMPLATES = [
   { id: "onyx",      name: "Onyx",      tag: "Minimal",      layout: "single" },
   { id: "manhattan", name: "Manhattan", tag: "Classic",      layout: "single" },
   { id: "slate",     name: "Slate",     tag: "Executive",    layout: "band"   },
-  { id: "vertex",    name: "Vertex",    tag: "Professional", layout: "single" },
+  { id: "vertex",    name: "Vertex",    tag: "Professional", layout: "single", chips: true },
   { id: "azurite",   name: "Azurite",   tag: "Two-column",   layout: "side"   },
   { id: "meridian",  name: "Meridian",  tag: "Minimal",      layout: "single" },
-  { id: "bordeaux",  name: "Bordeaux",  tag: "Bold",         layout: "band"   },
+  { id: "bordeaux",  name: "Bordeaux",  tag: "Bold",         layout: "band",   chips: true },
   { id: "gardenia",  name: "Gardenia",  tag: "Professional", layout: "single" },
 ];
+const photoCapable = t => t.layout === "side" || t.layout === "band";
 
 /* ---------------- documents store ---------------- */
 const LS_DOCS = "cxr-docs-v3", LS_ACTIVE = "cxr-active-v3"; // v3: fictional sample for public launch
@@ -123,7 +124,9 @@ function headerHTML(d){
   <div class="ct">${esc(d.location)}${d.phone?" &nbsp;·&nbsp; "+esc(d.phone):""}${d.email?" &nbsp;·&nbsp; "+esc(d.email):""}</div>
   <div class="ct">${(d.links||[]).map(l=>`<a href="${esc(l.url)}">${esc(l.label)}</a>`).join(" &nbsp;·&nbsp; ")}</div>`;
 }
-const skillsHTML = d => (d.skills||[]).map(s=>`<div class="sk"><b>${esc(s.label)}:</b> ${esc(s.items)}</div>`).join("");
+const skillsHTML = (d, chips) => (d.skills||[]).map(s=>chips
+  ? `<div class="sk"><b>${esc(s.label)}</b><span class="chipwrap">${String(s.items||"").split(/,\s*/).filter(Boolean).map(i=>`<span class="chip">${esc(i)}</span>`).join("")}</span></div>`
+  : `<div class="sk"><b>${esc(s.label)}:</b> ${esc(s.items)}</div>`).join("");
 const expHTML = d => (d.experience||[]).map(e=>`
   <div class="role"><h4>${esc(e.role)}</h4><span class="dt">${esc(e.date)}</span></div>
   <div class="co">${esc(e.company)}</div>
@@ -151,7 +154,7 @@ function renderResume(el, data, tplId, accent){
 
   const single = `${head}
     <h2>Profile</h2><p>${esc(data.summary)}</p>
-    <h2>Skills</h2>${skillsHTML(data)}
+    <h2>Skills</h2>${skillsHTML(data, tpl.chips)}
     <h2>Work Experience</h2>${expHTML(data)}
     ${projHTML(data)}
     <h2>Education</h2>${eduHTML(data)}
@@ -160,7 +163,7 @@ function renderResume(el, data, tplId, accent){
   if (tpl.layout === "band"){
     root.innerHTML = `<div class="band">${mono}${photo}<div class="bh">${headerHTML(data)}</div></div><div class="body">
       <h2>Profile</h2><p>${esc(data.summary)}</p>
-      <h2>Skills</h2>${skillsHTML(data)}
+      <h2>Skills</h2>${skillsHTML(data, tpl.chips)}
       <h2>Work Experience</h2>${expHTML(data)}
       ${projHTML(data)}
       <h2>Education</h2>${eduHTML(data)}
@@ -177,7 +180,7 @@ function renderResume(el, data, tplId, accent){
         <h2>Contact</h2>
         <div class="ct">${esc(data.location)}</div><div class="ct">${esc(data.phone)}</div><div class="ct">${esc(data.email)}</div>
         ${(data.links||[]).map(l=>`<div class="ct"><a href="${esc(l.url)}">${esc(l.label)}</a></div>`).join("")}
-        <h2>Skills</h2>${skillsHTML(data)}
+        <h2>Skills</h2>${skillsHTML(data, tpl.chips)}
         ${(data.certifications||[]).length?`<h2>Certifications</h2>${data.certifications.map(c=>`<div class="sk">${esc(c)}</div>`).join("")}`:""}
         <h2>Education</h2>${(data.education||[]).map(e=>`<div class="sk">${esc(e.degree)}<br><span class="nt">${esc(e.date)}</span></div>`).join("")}
       </div>`;
@@ -188,7 +191,7 @@ function renderResume(el, data, tplId, accent){
         <h2>Contact</h2>
         <div class="ct">${esc(data.location)}</div><div class="ct">${esc(data.phone)}</div><div class="ct">${esc(data.email)}</div>
         ${(data.links||[]).map(l=>`<div class="ct"><a href="${esc(l.url)}">${esc(l.label)}</a></div>`).join("")}
-        <h2>Skills</h2>${skillsHTML(data)}
+        <h2>Skills</h2>${skillsHTML(data, tpl.chips)}
         ${(data.certifications||[]).length?`<h2>Certifications</h2>${data.certifications.map(c=>`<div class="sk">${esc(c)}</div>`).join("")}`:""}
         <h2>Education</h2>${(data.education||[]).map(e=>`<div class="sk">${esc(e.degree)}<br><span class="nt">${esc(e.date)}</span></div>`).join("")}
       </div>
@@ -250,7 +253,7 @@ function renderGallery(){
     const card = document.createElement("div");
     card.className = "tcard" + (d.template===t.id?" sel":"");
     card.innerHTML = `<div class="thumb"><div class="page-mini"></div></div>
-      <div class="cap"><b>${t.name}</b><span>${t.tag}</span></div>`;
+      <div class="cap"><b>${t.name}</b><span>${t.tag}${photoCapable(t)?" · 📷":""}</span></div>`;
     renderResume(card.querySelector(".page-mini"), d.data, t.id, d.accent);
     card.onclick = ()=>{ d.template = t.id; d.updated = Date.now(); saveDocs(docs); go("editor"); };
     g.appendChild(card);
@@ -467,6 +470,19 @@ function buildPrintHTML(d){
   renderResume(holder, d.data, d.template, d.accent);
   const rzCss = document.getElementById("rz-styles").innerHTML;
   const isBand = (TEMPLATES.find(t=>t.id===d.template)||{}).layout === "band";
+  /* band templates: pull the banner OUT of the paginating table —
+     Chromium repaints backgrounds of fragmented rows at page edges
+     (the stray colored strip), so the colored banner must not live
+     inside the table flow */
+  let bandHTML = "";
+  if (isBand){
+    const rzEl = holder.firstChild;
+    const bandEl = rzEl.querySelector(".band");
+    if (bandEl){
+      bandHTML = `<div class="${rzEl.className}" style="${rzEl.getAttribute("style")||""}">${bandEl.outerHTML}</div>`;
+      bandEl.remove();
+    }
+  }
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>${esc(d.data.name || d.name)} — Resume</title><style>
     ${rzCss}
@@ -477,8 +493,8 @@ function buildPrintHTML(d){
     /* border-collapse:separate — collapse repaints row edges at page
        breaks in Chromium (stray colored strips) */
     table.pg{ width:100%; border-collapse:separate; border-spacing:0; }
-    table.pg td{ padding:0; }
-    .pgm{ height:11mm; }                 /* repeated top/bottom page margin */
+    table.pg td{ padding:0; background:#fff; } /* white cells cover fragment-edge paint artifacts */
+    .pgm{ height:${isBand ? "9mm" : "11mm"}; background:#fff; }  /* repeated top/bottom page margin */
     .pgc{ padding:0 13mm; }              /* side margins */
     .rz{ padding:0; }
     .rz-sidebar, .rz-azurite{ grid-template-columns:180px 1fr; }
@@ -486,10 +502,10 @@ function buildPrintHTML(d){
     .rz-folio .rail, .rz-sterling .rail{ margin:0; padding:16px 14px; }
     .rz-delft, .rz-shannon, .rz-bauhaus, .rz-slate, .rz-bordeaux{ padding:0; }
     ${isBand ? `
-    /* band templates: full-bleed banner like on screen */
-    .pgc{ padding:0; }
+    /* band templates: full-bleed banner (outside the table) like on screen */
+    .pgc{ padding:0 13mm; }
     .band{ padding:24px 13mm 18px !important; }
-    .body{ padding:14px 13mm 0 !important; }` : `
+    .body{ padding:0 !important; }` : `
     .rz-delft .band, .rz-shannon .band, .rz-slate .band, .rz-bordeaux .band{ padding:24px 26px 18px; }
     .rz-bauhaus .band{ padding:22px 26px; }
     .rz-delft .body, .rz-shannon .body, .rz-bauhaus .body, .rz-slate .body, .rz-bordeaux .body{ padding:14px 0 0; }`}
@@ -497,6 +513,7 @@ function buildPrintHTML(d){
     .rz li{ break-inside:avoid-page; }
     @media screen{ body{ padding:20px; } .pgm{ height:0; } }
   </style></head><body>
+  ${bandHTML}
   <table class="pg">
     <thead><tr><td><div class="pgm"></div></td></tr></thead>
     <tbody><tr><td><div class="pgc">${holder.innerHTML}</div></td></tr></tbody>

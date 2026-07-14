@@ -15,7 +15,7 @@ Everything runs **100% in your browser**. Your resume is never uploaded to any s
 
 ## Features
 
-- **16 templates** — classic, modern, two-column, banded, executive — one click to switch, any accent color
+- **20 templates** — classic, modern, two-column, banded, executive — one click to switch, any accent color
 - **Import** an existing resume (PDF / DOCX / TXT) — best-effort parsing into structured fields
 - **ATS checker** — paste a job description, get a keyword-match score plus resume-quality checks (quantified bullets, action verbs, length…)
 - **Multiple documents** — keep one resume per job application, duplicate and tweak
