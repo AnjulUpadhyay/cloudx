@@ -215,14 +215,22 @@
   /* Modern — accent underline headers (like builder v1) */
   .rz-modern h2{ color:var(--racc); border-bottom:1.6px solid var(--racc); padding-bottom:2px; }
 
-  /* Sidebar — two-column */
-  .rz-sidebar{ display:grid; grid-template-columns:195px 1fr; gap:26px; }
-  .rz-sidebar .left{ background:#f4f6fb; margin:-52px 0 -52px -58px; padding:52px 16px 52px 22px; }
-  .rz-sidebar .left h2{ font-size:11.5px; color:var(--racc); margin-top:16px; }
-  .rz-sidebar .left .sk{ font-size:11.8px; margin-bottom:7px; }
-  .rz-sidebar .left .ct{ font-size:11.2px; word-break:break-word; }
+  /* Sidebar family — two-column (Yamuna light, Azurite dark) */
+  .rz-sidebar, .rz-azurite{ display:grid; grid-template-columns:195px 1fr; gap:26px; }
+  .rz-sidebar .left, .rz-azurite .left{ background:#f4f6fb; margin:-52px 0 -52px -58px; padding:52px 16px 52px 22px; }
+  .rz-sidebar .left h2, .rz-azurite .left h2{ font-size:11.5px; color:var(--racc); margin-top:16px; }
+  .rz-sidebar .left .sk, .rz-azurite .left .sk{ font-size:11.8px; margin-bottom:7px; }
+  .rz-sidebar .left .ct, .rz-azurite .left .ct{ font-size:11.2px; word-break:break-word; }
   .rz-sidebar .main h2{ color:var(--racc); border-bottom:1.5px solid var(--racc); padding-bottom:2px; }
-  .rz-sidebar .nm{ font-size:25px; }
+  .rz-sidebar .nm, .rz-azurite .nm{ font-size:25px; }
+
+  /* optional photo (sidebar + banner templates only) */
+  .ph{ width:88px; height:88px; border-radius:50%; object-fit:cover; display:block; }
+  .rz-sidebar .left .ph, .rz-azurite .left .ph{ margin:0 auto 14px; width:104px; height:104px; border:3px solid rgba(255,255,255,.7); }
+  .rz-sidebar .left .ph{ border-color:#fff; box-shadow:0 2px 10px rgba(16,24,40,.15); }
+  .band{ display:flex; align-items:center; gap:20px; }
+  .band > .bh{ flex:1; min-width:0; }
+  .band .ph{ flex:none; border:3px solid rgba(255,255,255,.55); }
 
   /* Executive — centered serif */
   .rz-exec{ font-family:Georgia,"Times New Roman",serif; }
@@ -465,6 +473,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

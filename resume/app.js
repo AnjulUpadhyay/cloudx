@@ -145,7 +145,8 @@ function renderResume(el, data, tplId, accent){
   root.className = "rz rz-" + tpl.id;
   root.style.setProperty("--racc", accent || "#2563eb");
 
-  const mono = tpl.mono ? `<div class="mg">${esc(initials(data))}</div>` : "";
+  const photo = data.photo ? `<img class="ph" src="${data.photo}" alt="">` : "";
+  const mono = tpl.mono && !photo ? `<div class="mg">${esc(initials(data))}</div>` : "";
   const head = tpl.centerHead ? `<div class="head">${mono}${headerHTML(data)}</div>` : headerHTML(data);
 
   const single = `${head}
@@ -157,7 +158,7 @@ function renderResume(el, data, tplId, accent){
     ${certHTML(data)}`;
 
   if (tpl.layout === "band"){
-    root.innerHTML = `<div class="band">${mono}<div>${headerHTML(data)}</div></div><div class="body">
+    root.innerHTML = `<div class="band">${mono}${photo}<div class="bh">${headerHTML(data)}</div></div><div class="body">
       <h2>Profile</h2><p>${esc(data.summary)}</p>
       <h2>Skills</h2>${skillsHTML(data)}
       <h2>Work Experience</h2>${expHTML(data)}
@@ -183,6 +184,7 @@ function renderResume(el, data, tplId, accent){
   } else if (tpl.layout === "side"){
     root.innerHTML = `
       <div class="left">
+        ${photo}
         <h2>Contact</h2>
         <div class="ct">${esc(data.location)}</div><div class="ct">${esc(data.phone)}</div><div class="ct">${esc(data.email)}</div>
         ${(data.links||[]).map(l=>`<div class="ct"><a href="${esc(l.url)}">${esc(l.label)}</a></div>`).join("")}
@@ -308,6 +310,11 @@ function renderForm(){
     <span class="flabel">Headline / target role</span>${fin("title", d.title, "e.g. Senior DevOps Engineer")}
     <div class="frow">${fin("location", d.location, "City, Country")}${fin("phone", d.phone, "Phone")}</div>
     <span class="flabel">Email</span>${fin("email", d.email)}
+    <span class="flabel">Photo — optional; shows on sidebar &amp; banner templates. Skip it for ATS-safe applications.</span>
+    <div class="frow">
+      <input type="file" id="photoIn" accept="image/*">
+      ${d.photo ? '<button class="mini del" data-act="delphoto">Remove ✕</button>' : ""}
+    </div>
   </details>
 
   <details><summary>🔗 Links</summary><div class="fbody">
@@ -400,11 +407,28 @@ F.addEventListener("click", e=>{
   const b = e.target.closest("button"); if (!b || !b.dataset.act) return;
   e.preventDefault();
   const d = activeDoc().data, list = b.dataset.list, i = +b.dataset.i;
+  if (b.dataset.act==="delphoto"){ delete d.photo; saveActive(); openEditor(); return; }
   if (b.dataset.act==="add") (d[list] ||= []).push(structuredClone(BLANKS[list]));
   if (b.dataset.act==="del") d[list].splice(i,1);
   if (b.dataset.act==="up" && i>0) [d[list][i-1],d[list][i]] = [d[list][i],d[list][i-1]];
   if (b.dataset.act==="down" && i<d[list].length-1) [d[list][i+1],d[list][i]] = [d[list][i],d[list][i+1]];
   saveActive(); openEditor();
+});
+/* photo upload: resized client-side to a small square, stored as dataURL */
+F.addEventListener("change", e=>{
+  if (e.target.id !== "photoIn" || !e.target.files[0]) return;
+  const file = e.target.files[0];
+  const img = new Image();
+  img.onload = ()=>{
+    const S = 256, c = document.createElement("canvas");
+    c.width = c.height = S;
+    const side = Math.min(img.width, img.height);
+    c.getContext("2d").drawImage(img, (img.width-side)/2, (img.height-side)/2, side, side, 0, 0, S, S);
+    activeDoc().data.photo = c.toDataURL("image/jpeg", .85);
+    URL.revokeObjectURL(img.src);
+    saveActive(); openEditor();
+  };
+  img.src = URL.createObjectURL(file);
 });
 /* Form / JSON tab switch */
 document.querySelectorAll(".edtabs button").forEach(b=>{
@@ -442,6 +466,7 @@ function buildPrintHTML(d){
   const holder = document.createElement("div");
   renderResume(holder, d.data, d.template, d.accent);
   const rzCss = document.getElementById("rz-styles").innerHTML;
+  const isBand = (TEMPLATES.find(t=>t.id===d.template)||{}).layout === "band";
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>${esc(d.data.name || d.name)} — Resume</title><style>
     ${rzCss}
@@ -449,18 +474,25 @@ function buildPrintHTML(d){
     @page{ size:Letter; margin:0; }  /* margin 0 = no browser header/footer */
     html,body{ background:#fff; }
     body{ font-family:Arial,Helvetica,sans-serif; }
-    table.pg{ width:100%; border-collapse:collapse; }
+    /* border-collapse:separate — collapse repaints row edges at page
+       breaks in Chromium (stray colored strips) */
+    table.pg{ width:100%; border-collapse:separate; border-spacing:0; }
     table.pg td{ padding:0; }
     .pgm{ height:11mm; }                 /* repeated top/bottom page margin */
     .pgc{ padding:0 13mm; }              /* side margins */
     .rz{ padding:0; }
-    .rz-sidebar{ grid-template-columns:180px 1fr; }
-    .rz-sidebar .left{ margin:0; padding:16px 14px; }
+    .rz-sidebar, .rz-azurite{ grid-template-columns:180px 1fr; }
+    .rz-sidebar .left, .rz-azurite .left{ margin:0; padding:16px 14px; }
     .rz-folio .rail, .rz-sterling .rail{ margin:0; padding:16px 14px; }
     .rz-delft, .rz-shannon, .rz-bauhaus, .rz-slate, .rz-bordeaux{ padding:0; }
+    ${isBand ? `
+    /* band templates: full-bleed banner like on screen */
+    .pgc{ padding:0; }
+    .band{ padding:24px 13mm 18px !important; }
+    .body{ padding:14px 13mm 0 !important; }` : `
     .rz-delft .band, .rz-shannon .band, .rz-slate .band, .rz-bordeaux .band{ padding:24px 26px 18px; }
     .rz-bauhaus .band{ padding:22px 26px; }
-    .rz-delft .body, .rz-shannon .body, .rz-bauhaus .body, .rz-slate .body, .rz-bordeaux .body{ padding:14px 0 0; }
+    .rz-delft .body, .rz-shannon .body, .rz-bauhaus .body, .rz-slate .body, .rz-bordeaux .body{ padding:14px 0 0; }`}
     .rz .role, .rz .co, .rz h2{ break-after:avoid-page; }
     .rz li{ break-inside:avoid-page; }
     @media screen{ body{ padding:20px; } .pgm{ height:0; } }
